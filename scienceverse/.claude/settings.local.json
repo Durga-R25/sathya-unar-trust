@@ -23,7 +23,24 @@
       "Bash(if [ -f \"NUL\" ])",
       "Bash(then rm NUL)",
       "Bash(else echo \"NUL file not found in current directory\")",
-      "Bash(fi)"
+      "Bash(fi)",
+      "Bash(git commit:*)",
+      "Bash(git rm:*)",
+      "Bash(git check-ignore:*)",
+      "Bash(test:*)",
+      "Bash(for file in .env scienceverse-competition-firebase-adminsdk.json .firebaserc)",
+      "Bash(do if [ -f \"$file\" ])",
+      "Bash(then git ls-files \"$file\")",
+      "Bash(done)",
+      "Bash(then if git ls-files --error-unmatch \"$file\")",
+      "Bash(then echo \"   ⚠️  TRACKED: $file\")",
+      "Bash(else echo \"   ✅ NOT TRACKED: $file\")",
+      "Bash(git remote add:*)",
+      "Bash(git branch:*)",
+      "Bash(git push:*)",
+      "Bash(git pull:*)",
+      "Bash(git merge:*)",
+      "Bash(xargs:*)"
     ]
   }
 }
