@@ -1,0 +1,136 @@
+.category-manager {
+  max-width: 800px;
+}
+
+.manager-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #f1f5f9;
+  margin-bottom: 32px;
+}
+
+.add-category-section {
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 32px;
+}
+
+.section-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #f59e0b;
+  margin-bottom: 16px;
+}
+
+.add-category-form {
+  display: flex;
+  gap: 12px;
+}
+
+.category-input {
+  flex: 1;
+  padding: 12px 16px;
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: white;
+  font-size: 14px;
+}
+
+.add-button {
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.categories-list {
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 24px;
+}
+
+.category-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  margin-bottom: 12px;
+}
+
+.category-item.inactive {
+  opacity: 0.5;
+}
+
+.category-icon {
+  font-size: 24px;
+}
+
+.category-name {
+  flex: 1;
+  font-size: 16px;
+  font-weight: 600;
+  color: #f1f5f9;
+}
+
+.status-badge {
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.status-badge.active {
+  background-color: rgba(16, 185, 129, 0.2);
+  color: #10b981;
+}
+
+.status-badge.inactive {
+  background-color: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+}
+
+.category-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.toggle-btn,
+.delete-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.toggle-btn {
+  background-color: rgba(99, 102, 241, 0.2);
+}
+
+.delete-btn {
+  background-color: rgba(239, 68, 68, 0.2);
+}
+
+@media (max-width: 768px) {
+  .add-category-form {
+    flex-direction: column;
+  }
+
+  .category-item {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+}

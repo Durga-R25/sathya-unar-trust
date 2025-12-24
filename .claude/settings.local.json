@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run build:*)",
+      "Bash(firebase deploy:*)",
+      "Bash(firebase init:*)",
+      "Bash(npm install:*)",
+      "Bash(if exist .env type .env else echo \"No .env file found\")",
+      "Bash(firebase functions:delete:*)",
+      "Bash(echo:*)",
+      "Bash(npm start)",
+      "Bash(timeout 10 cmd:*)",
+      "Bash(timeout 10 echo:*)",
+      "Bash(node scripts/uploadMockData.js:*)",
+      "Bash(dir:*)",
+      "Bash(node scripts/getUserIds.js:*)",
+      "Bash(node scripts/uploadSampleNotifications.js:*)",
+      "Bash(node -e:*)",
+      "Bash(firebase firestore:indexes:*)",
+      "Bash(git init:*)",
+      "Bash(git config:*)",
+      "Bash(git add:*)",
+      "Bash(if [ -f \"NUL\" ])",
+      "Bash(then rm NUL)",
+      "Bash(else echo \"NUL file not found in current directory\")",
+      "Bash(fi)"
+    ]
+  }
+}
