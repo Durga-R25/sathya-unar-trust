@@ -9,6 +9,7 @@ import './SchoolsManagement.css';
  */
 const SchoolsManagement = () => {
   const [schools, setSchools] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [formData, setFormData] = useState({
     name: '',
     village: '',
@@ -196,7 +197,26 @@ const SchoolsManagement = () => {
 
         {/* Schools List */}
         <div className="schools-list-section">
-          <h4>Schools List ({schools.length})</h4>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            <h4>Schools List ({schools.filter(school =>
+              school.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+              school.district.toLowerCase().includes(searchQuery.toLowerCase()) ||
+              (school.village && school.village.toLowerCase().includes(searchQuery.toLowerCase()))
+            ).length})</h4>
+            <input
+              type="text"
+              placeholder="🔍 Search schools by name, district, or village..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{
+                padding: '8px 16px',
+                borderRadius: '8px',
+                border: '2px solid rgba(99, 102, 241, 0.3)',
+                width: '300px',
+                fontSize: '14px'
+              }}
+            />
+          </div>
           {schools.length === 0 ? (
             <div className="empty-state">
               <p>No schools added yet. Add your first school above.</p>
@@ -214,25 +234,40 @@ const SchoolsManagement = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {schools.map(school => (
-                    <tr key={school.id}>
-                      <td className="school-name">{school.name}</td>
-                      <td>{school.village || '-'}</td>
-                      <td>{school.district}</td>
-                      <td>{school.state}</td>
-                      <td>
-                        <button
-                          className="delete-button"
-                          onClick={() => handleDelete(school.id, school.name)}
-                          title="Delete school"
-                        >
-                          🗑️
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
+                  {schools
+                    .filter(school =>
+                      school.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                      school.district.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                      (school.village && school.village.toLowerCase().includes(searchQuery.toLowerCase()))
+                    )
+                    .map(school => (
+                      <tr key={school.id}>
+                        <td className="school-name">{school.name}</td>
+                        <td>{school.village || '-'}</td>
+                        <td>{school.district}</td>
+                        <td>{school.state}</td>
+                        <td>
+                          <button
+                            className="delete-button"
+                            onClick={() => handleDelete(school.id, school.name)}
+                            title="Delete school"
+                          >
+                            🗑️
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
                 </tbody>
               </table>
+              {searchQuery && schools.filter(school =>
+                school.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                school.district.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                (school.village && school.village.toLowerCase().includes(searchQuery.toLowerCase()))
+              ).length === 0 && (
+                <div className="empty-state" style={{ marginTop: '20px' }}>
+                  <p>No schools found matching "{searchQuery}"</p>
+                </div>
+              )}
             </div>
           )}
         </div>

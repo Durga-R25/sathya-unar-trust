@@ -92,10 +92,7 @@ const AdminPanel = ({ currentUser, videos, evaluations, onClose }) => {
         {/* Content */}
         <div className="admin-content">
           {activeTab === 'dashboard' && (
-            <AnalyticsDashboard
-              videos={videos}
-              evaluations={evaluations}
-            />
+            <AnalyticsDashboard />
           )}
 
           {activeTab === 'approvals' && (

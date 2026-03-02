@@ -1,4 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { db } from '../config/firebase';
 import './EvaluationHistory.css';
 
 /**
@@ -6,7 +8,27 @@ import './EvaluationHistory.css';
  * Displays transparent list of all evaluations with evaluator details
  * Shows who evaluated, their role, and individual dimension scores
  */
-const EvaluationHistory = ({ evaluations, onClose }) => {
+const EvaluationHistory = ({ videoId, onClose }) => {
+  const [evaluations, setEvaluations] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadEvaluations = async () => {
+      try {
+        const snap = await getDocs(
+          query(collection(db, 'evaluations'), where('videoId', '==', videoId))
+        );
+        setEvaluations(snap.docs.map(d => d.data()));
+      } catch (err) {
+        console.error('Error loading evaluations:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    if (videoId) loadEvaluations();
+    else setLoading(false);
+  }, [videoId]);
+
   const getRoleColor = (role) => {
     const colors = {
       judge: '#f59e0b',
@@ -55,18 +77,40 @@ const EvaluationHistory = ({ evaluations, onClose }) => {
     );
   };
 
-  // Sort evaluations: judges first, then teachers, then students
+  // Normalise role string for comparison (handles 'Judge', 'JUDGE', 'judge')
+  const normalizeRole = (role) => (role || '').toLowerCase().trim();
+
+  // Sort evaluations: judges/admins first, then teachers, then students
+  const roleOrder = { judge: 0, admin: 0, teacher: 1, student: 2 };
   const sortedEvaluations = [...evaluations].sort((a, b) => {
-    const roleOrder = { judge: 0, teacher: 1, student: 2 };
-    return roleOrder[a.evaluatorRole] - roleOrder[b.evaluatorRole];
+    const aOrder = roleOrder[normalizeRole(a.evaluatorRole)] ?? 3;
+    const bOrder = roleOrder[normalizeRole(b.evaluatorRole)] ?? 3;
+    return aOrder - bOrder;
   });
 
-  // Group by role
+  // Group by role (case-insensitive)
   const groupedEvaluations = {
-    judge: sortedEvaluations.filter(e => e.evaluatorRole === 'judge'),
-    teacher: sortedEvaluations.filter(e => e.evaluatorRole === 'teacher'),
-    student: sortedEvaluations.filter(e => e.evaluatorRole === 'student')
+    judge: sortedEvaluations.filter(e => ['judge', 'admin'].includes(normalizeRole(e.evaluatorRole))),
+    teacher: sortedEvaluations.filter(e => normalizeRole(e.evaluatorRole) === 'teacher'),
+    student: sortedEvaluations.filter(e => normalizeRole(e.evaluatorRole) === 'student')
   };
+
+  if (loading) {
+    return (
+      <div className="evaluation-history-overlay" onClick={onClose}>
+        <div className="evaluation-history" onClick={(e) => e.stopPropagation()}>
+          <div className="history-header">
+            <h2 className="history-title">All Evaluations</h2>
+            <button className="close-button" onClick={onClose}>✕</button>
+          </div>
+          <div style={{ textAlign: 'center', padding: '60px 20px', color: '#94a3b8' }}>
+            <div className="loading-spinner" style={{ margin: '0 auto 16px' }}></div>
+            <p>Loading evaluations...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="evaluation-history-overlay" onClick={onClose}>

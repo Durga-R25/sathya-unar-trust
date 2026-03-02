@@ -137,11 +137,16 @@ service cloud.firestore {
 
       // Video owner, admin, or teacher from same school can update
       // Teachers can only update status, approvedBy, approvedAt fields for approval
+      // Any authenticated user can update aggregate score fields after evaluation
       allow update: if isOwner(resource.data.uploaderId) || isAdmin() || (
         isTeacher() &&
         resource.data.uploaderSchool == getUserData().schoolName &&
         request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['status', 'approvedBy', 'approvedAt'])
+          .hasOnly(['status', 'approvedBy', 'approvedAt', 'rejectedBy', 'rejectedAt', 'rejectionReason'])
+      ) || (
+        isAuthenticated() &&
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['totalEvaluations', 'judgeEvaluations', 'teacherEvaluations', 'studentEvaluations', 'aggregateScore', 'scientificClarity', 'humanityCare', 'realLifeImpact', 'originalThinking', 'views'])
       );
 
       // Only video owner or admin can delete
@@ -155,32 +160,10 @@ service cloud.firestore {
       // Anyone authenticated can read evaluations
       allow read: if isAuthenticated();
 
-      // Create evaluation with constraints:
-      // - Student: Cannot evaluate own video (Phase B.2)
-      // - Teacher: Cannot evaluate own school's videos (Phase B.4)
-      // - Judge: Can only evaluate assigned videos (Phase B.3)
-      allow create: if isAuthenticated() && (
-        // Student constraints
-        (isStudent() &&
-          request.resource.data.evaluatorId == request.auth.uid &&
-          // Must check video is not their own (enforced in Cloud Function)
-          true
-        ) ||
-        // Teacher constraints
-        (isTeacher() &&
-          request.resource.data.evaluatorId == request.auth.uid &&
-          // Must check video is not from their school (enforced in Cloud Function)
-          true
-        ) ||
-        // Judge constraints
-        (isJudge() &&
-          request.resource.data.evaluatorId == request.auth.uid &&
-          // Must check video is assigned to them (enforced in Cloud Function)
-          true
-        ) ||
-        // Admin can evaluate any video
-        isAdmin()
-      );
+      // Any authenticated user can submit an evaluation for their own evaluatorId.
+      // Role-based restrictions (own video, own school) are enforced in app code.
+      allow create: if isAuthenticated() &&
+        request.resource.data.evaluatorId == request.auth.uid;
 
       // Only evaluation creator or admin can update
       allow update: if isOwner(resource.data.evaluatorId) || isAdmin();

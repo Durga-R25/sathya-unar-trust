@@ -18,11 +18,26 @@
   max-width: 700px;
   width: 95%;
   max-height: 90vh;
+  height: 90vh;
   overflow: hidden;
   display: flex;
   flex-direction: column;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
   animation: slideUp 0.3s ease-out;
+}
+
+@media (max-width: 768px) {
+  .upload-screen {
+    width: 100%;
+    height: 100vh;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+
+  .upload-content {
+    padding: 16px;
+    padding-bottom: 80px;
+  }
 }
 
 .upload-header {
@@ -84,7 +99,10 @@
 .upload-content {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 24px;
+  -webkit-overflow-scrolling: touch;
+  min-height: 0;
 }
 
 /* Choose Upload Method */
@@ -283,6 +301,7 @@
 
   .upload-content {
     padding: 20px;
+    padding-bottom: 100px;
   }
 
   .upload-options {

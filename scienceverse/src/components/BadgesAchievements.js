@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import './BadgesAchievements.css';
@@ -144,6 +144,9 @@ const BADGE_DEFINITIONS = {
 const BadgesAchievements = ({ currentUser }) => {
   const [userBadges, setUserBadges] = useState([]);
   const [schoolStats, setSchoolStats] = useState(null);
+  const [schoolVideos, setSchoolVideos] = useState([]);
+  const [showSchoolVideos, setShowSchoolVideos] = useState(false);
+  const schoolVideosRef = useRef(null);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('my-badges'); // my-badges, all-badges, leaderboard
 
@@ -169,15 +172,19 @@ const BadgesAchievements = ({ currentUser }) => {
 
       // Get school statistics
       if (currentUser.schoolName) {
+        // Use single filter + in-memory filter to avoid composite index requirement
         const schoolVideosQuery = query(
           collection(db, 'videos'),
-          where('uploaderSchool', '==', currentUser.schoolName),
-          where('status', '==', 'active')
+          where('uploaderSchool', '==', currentUser.schoolName)
         );
         const schoolSnapshot = await getDocs(schoolVideosQuery);
+        const activeSchoolVideos = schoolSnapshot.docs
+          .map(d => ({ id: d.id, ...d.data() }))
+          .filter(v => v.status === 'active');
 
+        setSchoolVideos(activeSchoolVideos);
         setSchoolStats({
-          totalVideos: schoolSnapshot.size,
+          totalVideos: activeSchoolVideos.length,
           schoolName: currentUser.schoolName
         });
       }
@@ -268,15 +275,68 @@ const BadgesAchievements = ({ currentUser }) => {
           </div>
         </div>
         {schoolStats && (
-          <div className="stat-card">
+          <div
+            className="stat-card"
+            onClick={() => {
+              const next = !showSchoolVideos;
+              setShowSchoolVideos(next);
+              if (next) {
+                setTimeout(() => {
+                  schoolVideosRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 100);
+              }
+            }}
+            style={{ cursor: 'pointer', border: showSchoolVideos ? '2px solid #6366f1' : undefined }}
+            title="Click to view school videos"
+          >
             <div className="stat-icon">🏫</div>
             <div className="stat-content">
               <div className="stat-value">{schoolStats.totalVideos}</div>
-              <div className="stat-label">School Videos</div>
+              <div className="stat-label">School Videos {showSchoolVideos ? '▲' : '▼'}</div>
             </div>
           </div>
         )}
       </div>
+
+      {/* School Videos Expandable List */}
+      {showSchoolVideos && schoolStats && (
+        <div ref={schoolVideosRef} style={{
+          background: '#f8fafc', borderRadius: '12px', padding: '16px',
+          marginBottom: '16px', border: '1px solid #e2e8f0'
+        }}>
+          <h4 style={{ margin: '0 0 12px 0', color: '#1e293b', fontSize: '15px' }}>
+            🏫 {schoolStats.schoolName} — Active Videos
+          </h4>
+          {schoolVideos.length === 0 ? (
+            <p style={{ color: '#94a3b8', textAlign: 'center', padding: '20px 0' }}>
+              No active videos from your school yet.
+            </p>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {schoolVideos.map(video => (
+                <div key={video.id} style={{
+                  background: 'white', borderRadius: '8px', padding: '12px',
+                  border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+                }}>
+                  <div>
+                    <div style={{ fontWeight: 600, color: '#1e293b', fontSize: '14px' }}>{video.title}</div>
+                    <div style={{ color: '#64748b', fontSize: '12px' }}>
+                      {video.uploaderName} · {video.category}
+                    </div>
+                  </div>
+                  <div style={{
+                    background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                    color: 'white', borderRadius: '20px', padding: '4px 10px',
+                    fontSize: '12px', fontWeight: 700
+                  }}>
+                    ⭐ {(video.aggregateScore || 0).toFixed(1)}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="badges-tabs">

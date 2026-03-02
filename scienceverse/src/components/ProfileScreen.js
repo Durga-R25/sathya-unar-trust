@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
+import { useUser } from '../context/UserContext';
 import './ProfileScreen.css';
 
 /**
@@ -13,7 +14,8 @@ import './ProfileScreen.css';
  *
  * In Phase 7, this will fetch real data from Firebase
  */
-const ProfileScreen = ({ currentUser, videos, evaluations, notifications, onClose, onLogout }) => {
+const ProfileScreen = ({ currentUser: propCurrentUser, videos, evaluations, notifications, onClose, onLogout }) => {
+  const { currentUser, refreshUserData, setCurrentUser } = useUser();
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(false);
@@ -26,6 +28,14 @@ const ProfileScreen = ({ currentUser, videos, evaluations, notifications, onClos
   const [passwordError, setPasswordError] = useState('');
   const [realStats, setRealStats] = useState(null);
   const [isLoadingStats, setIsLoadingStats] = useState(true);
+  const [editedName, setEditedName] = useState(currentUser.name);
+  const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
+  const [editMessage, setEditMessage] = useState({ type: '', text: '' });
+
+  // Keep editedName in sync when currentUser.name changes (after profile update)
+  useEffect(() => {
+    setEditedName(currentUser.name);
+  }, [currentUser.name]);
 
   // Load real statistics from Firestore
   useEffect(() => {
@@ -33,9 +43,9 @@ const ProfileScreen = ({ currentUser, videos, evaluations, notifications, onClos
   }, [currentUser]);
 
   const loadRealStats = async () => {
+    const role = currentUser.role?.toLowerCase();
     try {
       setIsLoadingStats(true);
-      const role = currentUser.role?.toLowerCase();
 
       if (role === 'student') {
         // Get student's videos (both active and pending)
@@ -60,25 +70,43 @@ const ProfileScreen = ({ currentUser, videos, evaluations, notifications, onClos
         });
 
       } else if (role === 'teacher') {
-        // Get students created by this teacher
-        const studentsQuery = query(
-          collection(db, 'users'),
-          where('createdBy', '==', currentUser.uid),
-          where('role', '==', 'student')
+        // Count this teacher's students — exact same logic as StudentSearch.loadStats
+        const allUsersSnap = await getDocs(
+          query(collection(db, 'users'), where('role', '==', 'student'))
         );
-        const studentsSnapshot = await getDocs(studentsQuery);
+        const allPendingSnap = await getDocs(
+          query(collection(db, 'pendingActivations'), where('activated', '==', false))
+        );
 
-        // Get videos from teacher's school
-        const schoolVideosQuery = query(
-          collection(db, 'videos'),
-          where('uploaderSchool', '==', currentUser.schoolName)
-        );
-        const schoolVideosSnapshot = await getDocs(schoolVideosQuery);
+        let myStudentsCount = 0;
+        allUsersSnap.forEach(d => {
+          if (d.data().createdBy === currentUser.uid) myStudentsCount++;
+        });
+        allPendingSnap.forEach(d => {
+          if (d.data().teacherId === currentUser.uid) myStudentsCount++;
+        });
+
+        // Count school videos — case-insensitive in-memory filter, same as VideoApproval
+        let videosSupervised = 0;
+        let pendingApprovals = 0;
+        if (currentUser.schoolName) {
+          const teacherSchool = currentUser.schoolName.toLowerCase().trim();
+          const [activeSnap, pendingSnap] = await Promise.all([
+            getDocs(query(collection(db, 'videos'), where('status', '==', 'active'))),
+            getDocs(query(collection(db, 'videos'), where('status', '==', 'pending')))
+          ]);
+          videosSupervised = activeSnap.docs.filter(d =>
+            d.data().uploaderSchool?.toLowerCase().trim() === teacherSchool
+          ).length;
+          pendingApprovals = pendingSnap.docs.filter(d =>
+            d.data().uploaderSchool?.toLowerCase().trim() === teacherSchool
+          ).length;
+        }
 
         setRealStats({
-          studentsManaged: studentsSnapshot.size,
-          videosSupervised: schoolVideosSnapshot.size,
-          pendingApprovals: schoolVideosSnapshot.docs.filter(doc => doc.data().status === 'pending').length
+          studentsManaged: myStudentsCount,
+          videosSupervised,
+          pendingApprovals
         });
 
       } else if (role === 'admin') {
@@ -104,6 +132,14 @@ const ProfileScreen = ({ currentUser, videos, evaluations, notifications, onClos
       }
     } catch (error) {
       console.error('Error loading real stats:', error);
+      // Set defaults so UI shows 0 instead of being stuck on "Loading..."
+      if (role === 'teacher') {
+        setRealStats({ studentsManaged: 0, videosSupervised: 0, pendingApprovals: 0 });
+      } else if (role === 'student') {
+        setRealStats({ videosSubmitted: 0, pendingVideos: 0, activeVideos: 0, totalViews: 0, avgScore: '0.0' });
+      } else if (role === 'admin') {
+        setRealStats({ totalUsers: 0, totalVideos: 0, pendingApprovals: 0, activeVideos: 0 });
+      }
     } finally {
       setIsLoadingStats(false);
     }
@@ -125,6 +161,45 @@ const ProfileScreen = ({ currentUser, videos, evaluations, notifications, onClos
       admin: '⚙️'
     };
     return icons[role] || '👤';
+  };
+
+  const handleProfileUpdate = async () => {
+    if (!editedName.trim()) {
+      setEditMessage({ type: 'error', text: 'Name cannot be empty' });
+      return;
+    }
+
+    if (editedName.trim() === currentUser.name) {
+      setEditMessage({ type: 'error', text: 'No changes detected' });
+      return;
+    }
+
+    setIsUpdatingProfile(true);
+    setEditMessage({ type: '', text: '' });
+    try {
+      const newName = editedName.trim();
+
+      // Update user document in Firestore
+      const userRef = doc(db, 'users', currentUser.uid);
+      await updateDoc(userRef, {
+        name: newName
+      });
+
+      // Re-read the user from Firestore into context so the profile header updates reliably
+      await refreshUserData();
+
+      // Show success inline (non-blocking), then close modal so user sees updated name
+      setEditMessage({ type: 'success', text: 'Profile updated successfully!' });
+      setTimeout(() => {
+        setShowEditProfile(false);
+        setEditMessage({ type: '', text: '' });
+      }, 1200);
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      setEditMessage({ type: 'error', text: 'Failed to update profile: ' + error.message });
+    } finally {
+      setIsUpdatingProfile(false);
+    }
   };
 
   const handlePasswordChange = () => {
@@ -475,13 +550,15 @@ const ProfileScreen = ({ currentUser, videos, evaluations, notifications, onClos
               ⚙️ Settings & Actions
             </div>
             <div className="profile-actions">
-              <button className="action-button" onClick={() => setShowEditProfile(true)}>
-                <div className="action-button-left">
-                  <span className="action-icon">✏️</span>
-                  <span>Edit Profile</span>
-                </div>
-                <span className="action-arrow">→</span>
-              </button>
+              {currentUser.role !== 'student' && (
+                <button className="action-button" onClick={() => setShowEditProfile(true)}>
+                  <div className="action-button-left">
+                    <span className="action-icon">✏️</span>
+                    <span>Edit Profile</span>
+                  </div>
+                  <span className="action-arrow">→</span>
+                </button>
+              )}
 
               <button className="action-button" onClick={() => setShowNotifications(true)}>
                 <div className="action-button-left">
@@ -530,18 +607,40 @@ const ProfileScreen = ({ currentUser, videos, evaluations, notifications, onClos
               <p style={{ color: '#64748b', marginBottom: '16px' }}>Update your profile information</p>
               <div className="form-group">
                 <label>Name</label>
-                <input type="text" className="modal-input" defaultValue={currentUser.name} placeholder="Enter your name" />
+                <input
+                  type="text"
+                  className="modal-input"
+                  value={editedName}
+                  onChange={(e) => setEditedName(e.target.value)}
+                  placeholder="Enter your name"
+                  disabled={isUpdatingProfile}
+                />
               </div>
               <div className="form-group">
                 <label>Email</label>
-                <input type="email" className="modal-input" defaultValue={currentUser.email} placeholder="Enter your email" disabled />
+                <input type="email" className="modal-input" value={currentUser.email} placeholder="Enter your email" disabled />
                 <small style={{ color: '#64748b', fontSize: '12px' }}>Email cannot be changed</small>
               </div>
-              <button className="modal-button" onClick={() => {
-                alert('Profile updated successfully!');
-                setShowEditProfile(false);
-              }}>
-                Save Changes
+              {editMessage.text && (
+                <div style={{
+                  padding: '10px 14px',
+                  borderRadius: '8px',
+                  marginBottom: '12px',
+                  background: editMessage.type === 'error' ? '#fef2f2' : '#f0fdf4',
+                  color: editMessage.type === 'error' ? '#dc2626' : '#16a34a',
+                  fontSize: '14px',
+                  fontWeight: 500,
+                  border: `1px solid ${editMessage.type === 'error' ? '#fecaca' : '#bbf7d0'}`
+                }}>
+                  {editMessage.type === 'success' ? '✓ ' : '⚠ '}{editMessage.text}
+                </div>
+              )}
+              <button
+                className="modal-button"
+                onClick={handleProfileUpdate}
+                disabled={isUpdatingProfile}
+              >
+                {isUpdatingProfile ? 'Updating...' : 'Save Changes'}
               </button>
             </div>
           </div>

@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSwipeable } from 'react-swipeable';
 import VideoPlayer from './VideoPlayer';
-import { getEvaluationsForVideo } from '../data/mockEvaluations';
 import './VideoFeed.css';
 
 /**
@@ -9,7 +8,7 @@ import './VideoFeed.css';
  * Implements TikTok-style vertical swipe navigation
  * Handles video preloading and smooth transitions
  */
-const VideoFeed = ({ videos, onEvaluate, onViewEvaluations, evaluations, initialVideoId }) => {
+const VideoFeed = ({ videos, currentUser, onEvaluate, onViewEvaluations, evaluations, initialVideoId, paused }) => {
   // Find initial video index if initialVideoId is provided
   const getInitialIndex = () => {
     if (initialVideoId) {
@@ -149,16 +148,16 @@ const VideoFeed = ({ videos, onEvaluate, onViewEvaluations, evaluations, initial
           }}
         >
           {videos.map((video, index) => {
-            const videoEvaluations = getEvaluationsForVideo(video.videoId);
             return (
               <div key={video.videoId} className="video-slide">
                 <VideoPlayer
                   video={video}
-                  isActive={index === currentIndex}
+                  isActive={index === currentIndex && !paused}
                   onVideoEnd={handleVideoEnd}
                   onEvaluate={() => onEvaluate(video)}
                   onViewEvaluations={() => onViewEvaluations(video)}
-                  evaluationsCount={videoEvaluations.length}
+                  evaluationsCount={video.totalEvaluations || 0}
+                  currentUser={currentUser}
                 />
               </div>
             );

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { collection, query, where, getDocs, doc, deleteDoc, updateDoc } from 'firebase/firestore';
-import { db } from '../config/firebase';
+import { collection, query, where, getDocs, doc, deleteDoc, updateDoc, setDoc } from 'firebase/firestore';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { auth, db } from '../config/firebase';
 import './StudentSearch.css';
 
 /**
@@ -16,6 +17,16 @@ const TeacherSearch = ({ currentUser }) => {
   const [error, setError] = useState('');
   const [showStats, setShowStats] = useState(false);
   const [stats, setStats] = useState(null);
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+  const [createFormData, setCreateFormData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    schoolName: '',
+    district: '',
+    state: ''
+  });
 
   const isAdmin = currentUser?.role?.toLowerCase() === 'admin';
 
@@ -119,6 +130,79 @@ const TeacherSearch = ({ currentUser }) => {
     }
   };
 
+  // Handle create teacher
+  const handleCreateTeacher = async (e) => {
+    e.preventDefault();
+    setError('');
+
+    // Validation
+    if (!createFormData.name.trim()) {
+      setError('Name is required');
+      return;
+    }
+    if (!createFormData.email.trim() || !createFormData.email.includes('@')) {
+      setError('Valid email is required');
+      return;
+    }
+    if (!createFormData.password || createFormData.password.length < 6) {
+      setError('Password must be at least 6 characters');
+      return;
+    }
+    if (!createFormData.schoolName.trim()) {
+      setError('School name is required');
+      return;
+    }
+
+    setIsCreating(true);
+    try {
+      // Create Firebase Auth account
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        createFormData.email.trim(),
+        createFormData.password
+      );
+      const user = userCredential.user;
+
+      // Create user document in Firestore
+      await setDoc(doc(db, 'users', user.uid), {
+        uid: user.uid,
+        name: createFormData.name.trim(),
+        email: createFormData.email.trim(),
+        schoolName: createFormData.schoolName.trim(),
+        district: createFormData.district.trim() || '',
+        state: createFormData.state.trim() || '',
+        role: 'teacher',
+        createdAt: new Date(),
+        createdBy: currentUser.uid
+      });
+
+      alert('✅ Teacher account created successfully!');
+      setShowCreateForm(false);
+      setCreateFormData({
+        name: '',
+        email: '',
+        password: '',
+        schoolName: '',
+        district: '',
+        state: ''
+      });
+
+      // Reload stats
+      if (showStats) {
+        loadStats();
+      }
+    } catch (error) {
+      console.error('Error creating teacher:', error);
+      if (error.code === 'auth/email-already-in-use') {
+        setError('This email is already registered');
+      } else {
+        setError('Failed to create teacher: ' + error.message);
+      }
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
   // Handle delete
   const handleDelete = async (teacher) => {
     if (!window.confirm(`Delete teacher "${teacher.name}"? This cannot be undone.`)) {
@@ -145,12 +229,34 @@ const TeacherSearch = ({ currentUser }) => {
         <p className="subtitle">Search for teachers by name or email</p>
       </div>
 
+      {/* Action Buttons */}
+      <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
+        {isAdmin && (
+          <button
+            className="create-button"
+            onClick={() => setShowCreateForm(!showCreateForm)}
+            style={{
+              padding: '12px 20px',
+              background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              fontWeight: 600,
+              cursor: 'pointer'
+            }}
+          >
+            {showCreateForm ? '✕ Cancel' : '➕ Create New Teacher'}
+          </button>
+        )}
+        {!showStats ? (
+          <button className="stats-button" onClick={loadStats}>
+            📊 Show Statistics
+          </button>
+        ) : null}
+      </div>
+
       {/* Quick Stats */}
-      {!showStats ? (
-        <button className="stats-button" onClick={loadStats}>
-          📊 Show Statistics
-        </button>
-      ) : (
+      {showStats && (
         <div className="stats-card">
           <div className="stat-item">
             <div className="stat-value">{stats.total}</div>
@@ -162,6 +268,98 @@ const TeacherSearch = ({ currentUser }) => {
               <div className="stat-label">Created by Me</div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Create Form */}
+      {showCreateForm && (
+        <div className="create-form-card" style={{
+          background: 'rgba(16, 185, 129, 0.1)',
+          border: '2px solid rgba(16, 185, 129, 0.3)',
+          borderRadius: '12px',
+          padding: '24px',
+          marginBottom: '24px'
+        }}>
+          <h3 style={{ marginBottom: '20px', color: '#10b981' }}>➕ Create New Teacher</h3>
+          <form onSubmit={handleCreateTeacher}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+              <div>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Name *</label>
+                <input
+                  type="text"
+                  className="search-input"
+                  value={createFormData.name}
+                  onChange={(e) => setCreateFormData({ ...createFormData, name: e.target.value })}
+                  placeholder="Full name"
+                  required
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Email *</label>
+                <input
+                  type="email"
+                  className="search-input"
+                  value={createFormData.email}
+                  onChange={(e) => setCreateFormData({ ...createFormData, email: e.target.value })}
+                  placeholder="email@example.com"
+                  required
+                />
+              </div>
+            </div>
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Password *</label>
+              <input
+                type="password"
+                className="search-input"
+                value={createFormData.password}
+                onChange={(e) => setCreateFormData({ ...createFormData, password: e.target.value })}
+                placeholder="Minimum 6 characters"
+                required
+                minLength={6}
+              />
+            </div>
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>School Name *</label>
+              <input
+                type="text"
+                className="search-input"
+                value={createFormData.schoolName}
+                onChange={(e) => setCreateFormData({ ...createFormData, schoolName: e.target.value })}
+                placeholder="School name"
+                required
+              />
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
+              <div>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>District</label>
+                <input
+                  type="text"
+                  className="search-input"
+                  value={createFormData.district}
+                  onChange={(e) => setCreateFormData({ ...createFormData, district: e.target.value })}
+                  placeholder="District"
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>State</label>
+                <input
+                  type="text"
+                  className="search-input"
+                  value={createFormData.state}
+                  onChange={(e) => setCreateFormData({ ...createFormData, state: e.target.value })}
+                  placeholder="State"
+                />
+              </div>
+            </div>
+            <button
+              type="submit"
+              className="search-button"
+              disabled={isCreating}
+              style={{ width: '100%', padding: '14px' }}
+            >
+              {isCreating ? '⏳ Creating...' : '✓ Create Teacher Account'}
+            </button>
+          </form>
         </div>
       )}
 

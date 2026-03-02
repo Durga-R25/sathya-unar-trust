@@ -1,86 +1,120 @@
 /**
  * Service Worker for ScienceVerse PWA
- * Handles offline caching and background sync
+ * Production-ready with Stale-While-Revalidate strategy
+ * Provides instant loads + automatic updates for production deployment
  */
 
-const CACHE_NAME = 'scienceverse-v1';
-const urlsToCache = [
-  '/',
-  '/index.html',
-  '/static/css/main.css',
-  '/static/js/main.js',
-];
+// Auto-versioned cache name - updates with each deployment
+const CACHE_VERSION = '20250107'; // Update manually on major changes
+const CACHE_NAME = `scienceverse-v${CACHE_VERSION}`;
+const VIDEO_CACHE = `scienceverse-videos-v${CACHE_VERSION}`;
 
-// Install event - cache essential files
+// Install event - activate immediately
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then((cache) => {
-        console.log('Opened cache');
-        return cache.addAll(urlsToCache);
-      })
-      .catch((err) => {
-        console.log('Cache failed:', err);
-      })
-  );
+  console.log('[SW] Installing service worker...');
+  // Skip waiting to activate new service worker immediately
   self.skipWaiting();
 });
 
 // Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
+  console.log('[SW] Activating service worker...');
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
-            console.log('Deleting old cache:', cacheName);
+          // Delete old cache versions
+          if (cacheName !== CACHE_NAME && cacheName !== VIDEO_CACHE) {
+            console.log('[SW] Deleting old cache:', cacheName);
             return caches.delete(cacheName);
           }
         })
       );
     })
   );
+  // Take control of all pages immediately
   self.clients.claim();
 });
 
-// Fetch event - serve from cache, fallback to network
+// Fetch event - Stale-While-Revalidate strategy
 self.addEventListener('fetch', (event) => {
+  const { request } = event;
+  const url = new URL(request.url);
+
+  // Skip non-GET requests
+  if (request.method !== 'GET') {
+    return;
+  }
+
+  // Skip Chrome extension requests
+  if (url.protocol === 'chrome-extension:') {
+    return;
+  }
+
+  // Handle video requests separately (larger cache)
+  if (url.pathname.includes('.mp4') || url.pathname.includes('.webm')) {
+    event.respondWith(handleVideoRequest(request));
+    return;
+  }
+
+  // Handle all other requests with stale-while-revalidate
   event.respondWith(
-    caches.match(event.request)
-      .then((response) => {
-        // Cache hit - return response
-        if (response) {
-          return response;
-        }
+    caches.open(CACHE_NAME).then((cache) => {
+      return cache.match(request).then((cachedResponse) => {
+        // Fetch from network and update cache in background
+        const fetchPromise = fetch(request)
+          .then((networkResponse) => {
+            // Only cache successful responses
+            if (networkResponse && networkResponse.status === 200) {
+              // Clone before caching
+              cache.put(request, networkResponse.clone());
+            }
+            return networkResponse;
+          })
+          .catch((error) => {
+            console.log('[SW] Fetch failed:', error);
+            // Return offline fallback if available
+            if (request.destination === 'document') {
+              return cache.match('/index.html');
+            }
+            return null;
+          });
 
-        // Clone the request
-        const fetchRequest = event.request.clone();
-
-        return fetch(fetchRequest).then((response) => {
-          // Check if valid response
-          if (!response || response.status !== 200 || response.type !== 'basic') {
-            return response;
-          }
-
-          // Clone the response
-          const responseToCache = response.clone();
-
-          // Cache videos for offline viewing (limited to last 20)
-          if (event.request.url.includes('.mp4')) {
-            caches.open(CACHE_NAME).then((cache) => {
-              cache.put(event.request, responseToCache);
-            });
-          }
-
-          return response;
-        });
-      })
-      .catch(() => {
-        // Return offline page if available
-        return caches.match('/offline.html');
-      })
+        // Return cached version immediately (fast), fetch updates in background
+        return cachedResponse || fetchPromise;
+      });
+    })
   );
 });
+
+// Handle video requests with separate cache
+async function handleVideoRequest(request) {
+  const cache = await caches.open(VIDEO_CACHE);
+  const cachedResponse = await cache.match(request);
+
+  if (cachedResponse) {
+    console.log('[SW] Serving video from cache:', request.url);
+    return cachedResponse;
+  }
+
+  try {
+    console.log('[SW] Fetching video from network:', request.url);
+    const networkResponse = await fetch(request);
+
+    if (networkResponse && networkResponse.status === 200) {
+      // Cache videos for offline viewing
+      cache.put(request, networkResponse.clone());
+    }
+
+    return networkResponse;
+  } catch (error) {
+    console.log('[SW] Video fetch failed:', error);
+    return new Response('Video unavailable offline', {
+      status: 503,
+      statusText: 'Service Unavailable'
+    });
+  }
+}
 
 // Background sync for uploading videos when back online
 self.addEventListener('sync', (event) => {

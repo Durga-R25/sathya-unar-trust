@@ -7,7 +7,11 @@ import './VideoInfo.css';
  */
 const VideoInfo = ({ video }) => {
   const formatDate = (date) => {
-    return new Date(date).toLocaleDateString('en-IN', {
+    if (!date) return '—';
+    // Firestore Timestamps have a .toDate() method; plain strings/numbers go straight to Date()
+    const d = date?.toDate ? date.toDate() : new Date(date);
+    if (isNaN(d.getTime())) return '—';
+    return d.toLocaleDateString('en-IN', {
       year: 'numeric',
       month: 'short',
       day: 'numeric'
@@ -15,8 +19,9 @@ const VideoInfo = ({ video }) => {
   };
 
   const formatDuration = (seconds) => {
+    if (!seconds || seconds <= 0) return '—';
     const minutes = Math.floor(seconds / 60);
-    const secs = seconds % 60;
+    const secs = Math.floor(seconds % 60);
     return `${minutes}:${secs.toString().padStart(2, '0')}`;
   };
 
@@ -37,7 +42,7 @@ const VideoInfo = ({ video }) => {
         </div>
         <div className="info-row">
           <span className="info-label">School:</span>
-          <span className="info-value">{video.schoolName}</span>
+          <span className="info-value">{video.uploaderSchool || video.schoolName || '—'}</span>
         </div>
         <div className="info-row">
           <span className="info-label">District:</span>
@@ -61,12 +66,14 @@ const VideoInfo = ({ video }) => {
         </div>
         <div className="info-row">
           <span className="info-label">Views:</span>
-          <span className="info-value">{video.views.toLocaleString()}</span>
+          <span className="info-value">{(video.views || 0).toLocaleString()}</span>
         </div>
-        <div className="info-row">
-          <span className="info-label">Voice-over:</span>
-          <span className="info-value">{video.hasVoiceover ? '✓ Yes' : '✗ No'}</span>
-        </div>
+        {video.hasVoiceover !== undefined && (
+          <div className="info-row">
+            <span className="info-label">Voice-over:</span>
+            <span className="info-value">{video.hasVoiceover ? '✓ Yes' : '✗ No'}</span>
+          </div>
+        )}
       </div>
 
       <div className="info-section">

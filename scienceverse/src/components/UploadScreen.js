@@ -20,6 +20,7 @@ const UploadScreen = ({ currentUser, onClose, onUploadComplete }) => {
   const [uploadStep, setUploadStep] = useState(isTeacher ? 'selectStudent' : 'choose'); // selectStudent, choose, record, upload, form, uploading, complete
   const [selectedVideo, setSelectedVideo] = useState(null);
   const [videoFile, setVideoFile] = useState(null);
+  const [videoDuration, setVideoDuration] = useState(0);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [students, setStudents] = useState([]);
@@ -68,9 +69,29 @@ const UploadScreen = ({ currentUser, onClose, onUploadComplete }) => {
     ]
   };
 
-  const handleRecordComplete = (blob) => {
+  // Extract video duration from a File object via a temporary video element
+  const extractDuration = (file) => {
+    return new Promise((resolve) => {
+      const tempVideo = document.createElement('video');
+      tempVideo.preload = 'metadata';
+      const url = URL.createObjectURL(file);
+      tempVideo.src = url;
+      tempVideo.onloadedmetadata = () => {
+        URL.revokeObjectURL(url);
+        resolve(Math.round(tempVideo.duration) || 0);
+      };
+      tempVideo.onerror = () => {
+        URL.revokeObjectURL(url);
+        resolve(0);
+      };
+    });
+  };
+
+  const handleRecordComplete = async (blob) => {
     // Create file from blob
     const file = new File([blob], `recording_${Date.now()}.webm`, { type: 'video/webm' });
+    const dur = await extractDuration(file);
+    setVideoDuration(dur);
     setVideoFile(file);
     setSelectedVideo(URL.createObjectURL(blob));
     setUploadStep('form');
@@ -88,6 +109,7 @@ const UploadScreen = ({ currentUser, onClose, onUploadComplete }) => {
       return;
     }
 
+    extractDuration(file).then(dur => setVideoDuration(dur));
     setVideoFile(file);
     setSelectedVideo(URL.createObjectURL(file));
     setUploadStep('form');
@@ -216,7 +238,7 @@ const UploadScreen = ({ currentUser, onClose, onUploadComplete }) => {
             approvedAt: isTeacher ? serverTimestamp() : null,
             fileSize: videoFile.size,
             fileName: videoFile.name,
-            duration: 0, // Can be extracted from video metadata
+            duration: videoDuration,
             views: 0,
             totalEvaluations: 0,
             judgeEvaluations: 0,

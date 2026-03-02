@@ -62,11 +62,18 @@
 .video-actions {
   position: absolute;
   right: 12px;
+  right: max(12px, env(safe-area-inset-right, 12px));
   bottom: 120px;
   display: flex;
   flex-direction: column;
   gap: 16px;
   z-index: 30;
+}
+
+@supports (padding: max(0px)) {
+  .video-actions {
+    right: max(12px, env(safe-area-inset-right));
+  }
 }
 
 .action-button {
@@ -281,15 +288,40 @@
     font-size: 12px;
   }
 
+  /* Compact action buttons so all 8 fit on screen without overflowing */
+  .video-actions {
+    gap: 6px;
+    bottom: 90px;
+  }
+
+  .action-button {
+    padding: 4px;
+    min-width: 40px;
+  }
+
   .action-button .icon {
-    font-size: 24px;
+    font-size: 22px;
+    margin-bottom: 2px;
   }
 
   .action-label {
-    font-size: 11px;
+    font-size: 10px;
   }
 
   .info-content {
     padding: 20px;
+  }
+
+  .score-circle {
+    width: 38px;
+    height: 38px;
+  }
+
+  .score-value {
+    font-size: 14px;
+  }
+
+  .evaluate-icon {
+    font-size: 24px !important;
   }
 }

@@ -13,7 +13,6 @@ import AdminPanel from './components/AdminPanel';
 import LoginScreen from './components/LoginScreen';
 import ProfileScreen from './components/ProfileScreen';
 import StudentSearch from './components/StudentSearch';
-import { mockEvaluations, getEvaluationsForVideo, addEvaluation } from './data/mockEvaluations';
 import './App.css';
 
 /**
@@ -42,7 +41,7 @@ const AppContent = () => {
   const [showEvaluationPanel, setShowEvaluationPanel] = useState(false);
   const [showEvaluationHistory, setShowEvaluationHistory] = useState(false);
   const [selectedVideo, setSelectedVideo] = useState(null);
-  const [evaluations, setEvaluations] = useState(mockEvaluations);
+  const [evaluations] = useState([]);
 
   // Upload state
   const [showUploadScreen, setShowUploadScreen] = useState(false);
@@ -62,6 +61,7 @@ const AppContent = () => {
 
   // Notifications state
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showAllNotifications, setShowAllNotifications] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
 
@@ -79,10 +79,8 @@ const AppContent = () => {
     };
   }, []);
 
-  // Debug: Track showStudentSearch state changes
-  React.useEffect(() => {
-    console.log('*** showStudentSearch state changed to:', showStudentSearch);
-  }, [showStudentSearch]);
+  // Pause all videos when any modal is open (admin panel, profile, upload, etc.)
+  const isAnyModalOpen = showAdminPanel || showProfileScreen || showUploadScreen || showDiscoveryScreen || showEvaluationPanel || showEvaluationHistory || showAllNotifications || showStudentSearch;
 
   // Load videos from Firestore
   useEffect(() => {
@@ -119,6 +117,18 @@ const AppContent = () => {
     }
   };
 
+  // Convert a Firestore Timestamp (or any date-like value) to an ISO string.
+  // Returns null if the value is missing or unreadable.
+  const toISOString = (val) => {
+    if (!val) return null;
+    try {
+      const d = val.toDate ? val.toDate() : new Date(val);
+      return isNaN(d.getTime()) ? null : d.toISOString();
+    } catch {
+      return null;
+    }
+  };
+
   const loadVideos = async () => {
     try {
       setIsLoadingVideos(true);
@@ -128,17 +138,40 @@ const AppContent = () => {
         orderBy('createdAt', 'desc')
       );
       const snapshot = await getDocs(videosQuery);
-      const videosList = snapshot.docs.map(doc => ({
-        id: doc.id,
-        videoId: doc.data().videoId,
-        fileUrl: doc.data().videoUrl, // Map videoUrl to fileUrl for VideoPlayer compatibility
-        ...doc.data()
-      }));
+      const videosList = snapshot.docs.map(doc => {
+        const data = doc.data();
+
+        // Log raw Firestore fields once (first video) so field names are visible in browser console
+        if (snapshot.docs[0].id === doc.id) {
+          console.log('[ScienceVerse] First video raw Firestore fields:', Object.keys(data));
+          console.log('[ScienceVerse] First video data sample:', {
+            uploaderSchool: data.uploaderSchool,
+            schoolName: data.schoolName,
+            duration: data.duration,
+            uploadedAt: data.uploadedAt,
+            createdAt: data.createdAt,
+          });
+        }
+
+        return {
+          ...data,
+          id: doc.id,
+          videoId: data.videoId,
+          fileUrl: data.videoUrl,
+          // Normalise school name — field was 'uploaderSchool' in UploadScreen
+          schoolName: data.uploaderSchool || data.schoolName || '',
+          // Convert Firestore Timestamps to ISO strings so components use plain strings
+          uploadedAt: toISOString(data.uploadedAt) || toISOString(data.createdAt),
+          createdAt: toISOString(data.createdAt),
+          approvedAt: toISOString(data.approvedAt),
+          rejectedAt: toISOString(data.rejectedAt),
+        };
+      });
       setVideos(videosList);
-      console.log('Loaded videos from Firestore:', videosList.length);
+      console.log('[ScienceVerse] Loaded videos:', videosList.length);
     } catch (error) {
       console.error('Error loading videos:', error);
-      setVideos([]); // Set empty array on error
+      setVideos([]);
     } finally {
       setIsLoadingVideos(false);
     }
@@ -233,11 +266,8 @@ const AppContent = () => {
   };
 
   const handleEvaluationSubmit = (evaluation) => {
-    // Add evaluation to state
-    addEvaluation(evaluation.videoId, evaluation);
-    setEvaluations({ ...evaluations });
-
-    // In Phase 7, this will update Firebase and trigger re-calculation
+    // Reload videos so updated aggregate scores are reflected immediately
+    loadVideos();
     console.log('Evaluation submitted:', evaluation);
   };
 
@@ -293,6 +323,14 @@ const AppContent = () => {
                 <span className="notification-badge">{unreadCount}</span>
               )}
             </button>
+            <button
+              className="logout-button-header"
+              onClick={handleLogout}
+              title="Logout"
+            >
+              <span>🚪</span>
+              <span className="logout-label">Logout</span>
+            </button>
             {showNotifications && (
               <div className="notifications-dropdown">
                 <div className="notifications-header">
@@ -324,7 +362,7 @@ const AppContent = () => {
                   <div className="notifications-footer">
                     <button className="view-all-btn" onClick={() => {
                       setShowNotifications(false);
-                      setShowProfileScreen(true);
+                      setShowAllNotifications(true);
                     }}>
                       View All Notifications
                     </button>
@@ -353,15 +391,22 @@ const AppContent = () => {
                 <span className="placeholder-icon">🎥</span>
                 <h2>No Videos Yet</h2>
                 <p>Be the first to upload a video!</p>
+                {currentUser?.role === 'judge' && (
+                  <p style={{ marginTop: '12px', color: '#94a3b8', fontSize: '14px' }}>
+                    💡 As a judge, you'll be able to evaluate videos once they are uploaded and assigned to you.
+                  </p>
+                )}
               </div>
             </div>
           ) : (
             <VideoFeed
               videos={videos}
+              currentUser={currentUser}
               onEvaluate={handleEvaluate}
               onViewEvaluations={handleViewEvaluations}
               evaluations={evaluations}
               initialVideoId={selectedVideoId}
+              paused={isAnyModalOpen}
             />
           )
         ) : (
@@ -391,7 +436,7 @@ const AppContent = () => {
       {/* Evaluation History Modal */}
       {showEvaluationHistory && selectedVideo && (
         <EvaluationHistory
-          evaluations={getEvaluationsForVideo(selectedVideo.videoId)}
+          videoId={selectedVideo.videoId || selectedVideo.id}
           onClose={() => setShowEvaluationHistory(false)}
         />
       )}
@@ -450,6 +495,64 @@ const AppContent = () => {
           }}
           onLogout={handleLogout}
         />
+      )}
+
+      {/* All Notifications Modal */}
+      {showAllNotifications && (
+        <div className="notifications-modal-overlay" onClick={() => setShowAllNotifications(false)} style={{
+          position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
+          background: 'rgba(0,0,0,0.7)', zIndex: 500, display: 'flex',
+          alignItems: 'center', justifyContent: 'center', padding: '20px'
+        }}>
+          <div onClick={e => e.stopPropagation()} style={{
+            background: 'white', borderRadius: '16px', width: '100%', maxWidth: '480px',
+            maxHeight: '80vh', display: 'flex', flexDirection: 'column', overflow: 'hidden',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.4)'
+          }}>
+            <div style={{
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', padding: '20px 24px',
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+            }}>
+              <h3 style={{ margin: 0, color: 'white', fontSize: '20px', fontWeight: 700 }}>
+                🔔 All Notifications
+              </h3>
+              <button onClick={() => setShowAllNotifications(false)} style={{
+                background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: '50%',
+                width: '32px', height: '32px', color: 'white', fontSize: '18px',
+                cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center'
+              }}>✕</button>
+            </div>
+            <div style={{ overflowY: 'auto', flex: 1 }}>
+              {notifications.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '40px 20px', color: '#94a3b8' }}>
+                  <div style={{ fontSize: '48px', marginBottom: '12px' }}>🔔</div>
+                  <p>No notifications yet</p>
+                </div>
+              ) : (
+                notifications.map(notification => (
+                  <div key={notification.id} style={{
+                    display: 'flex', gap: '12px', padding: '16px 20px',
+                    borderBottom: '1px solid #e2e8f0',
+                    background: !notification.read ? '#f0f9ff' : 'transparent'
+                  }}>
+                    <span style={{ fontSize: '24px', flexShrink: 0 }}>{notification.icon || '📢'}</span>
+                    <div>
+                      <strong style={{ display: 'block', color: '#1e293b', fontSize: '14px' }}>
+                        {notification.title}
+                      </strong>
+                      <p style={{ margin: '4px 0', color: '#64748b', fontSize: '13px' }}>
+                        {notification.message}
+                      </p>
+                      <small style={{ color: '#94a3b8', fontSize: '12px' }}>
+                        {getTimeAgo(notification.createdAt)}
+                      </small>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Student Search Screen Modal (Teachers only) */}

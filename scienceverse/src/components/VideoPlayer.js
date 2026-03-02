@@ -1,4 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
+import { doc, updateDoc, increment } from 'firebase/firestore';
+import { db } from '../config/firebase';
 import './VideoPlayer.css';
 import VideoInfo from './VideoInfo';
 import ScoreDisplay from './ScoreDisplay';
@@ -8,14 +10,17 @@ import ScoreDisplay from './ScoreDisplay';
  * Displays a single video with controls, metadata, and evaluation scores
  * Auto-plays when visible, pauses when swiped away
  */
-const VideoPlayer = ({ video, isActive, onVideoEnd, onEvaluate, onViewEvaluations, evaluationsCount = 0 }) => {
+const VideoPlayer = ({ video, currentUser, isActive, onVideoEnd, onEvaluate, onViewEvaluations, evaluationsCount = 0 }) => {
   const videoRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [isMuted, setIsMuted] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
+  const [isLiked, setIsLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(video.likes || 0);
+  const viewCounted = useRef(false); // ensure we count at most once per mount
 
-  // Auto-play/pause based on visibility
+  // Auto-play/pause based on visibility; increment view count when video becomes active
   useEffect(() => {
     if (!videoRef.current) return;
 
@@ -23,10 +28,25 @@ const VideoPlayer = ({ video, isActive, onVideoEnd, onEvaluate, onViewEvaluation
       videoRef.current.play()
         .then(() => setIsPlaying(true))
         .catch(err => console.log('Autoplay prevented:', err));
+
+      // Count one view per mount — not on every swipe back to this video
+      if (video.id && !viewCounted.current) {
+        viewCounted.current = true;
+        updateDoc(doc(db, 'videos', video.id), { views: increment(1) })
+          .catch(err => console.log('View count update failed:', err));
+      }
     } else {
       videoRef.current.pause();
       setIsPlaying(false);
     }
+
+    // Cleanup: pause video when component unmounts
+    return () => {
+      if (videoRef.current) {
+        videoRef.current.pause();
+        videoRef.current.currentTime = 0;
+      }
+    };
   }, [isActive]);
 
   // Update progress bar
@@ -72,10 +92,46 @@ const VideoPlayer = ({ video, isActive, onVideoEnd, onEvaluate, onViewEvaluation
   };
 
   const formatViews = (views) => {
-    if (views >= 1000) {
-      return `${(views / 1000).toFixed(1)}K`;
+    const count = views || 0;
+    if (count >= 1000) {
+      return `${(count / 1000).toFixed(1)}K`;
     }
-    return views;
+    return count;
+  };
+
+  const handleLike = () => {
+    const nowLiked = !isLiked;
+    setIsLiked(nowLiked);
+    setLikeCount(prev => nowLiked ? prev + 1 : Math.max(0, prev - 1));
+  };
+
+  const showToast = (message) => {
+    const toast = document.createElement('div');
+    toast.style.cssText = 'position:fixed;bottom:120px;left:50%;transform:translateX(-50%);background:rgba(30,41,59,0.95);color:white;padding:12px 20px;border-radius:24px;font-size:14px;font-weight:500;z-index:9999;backdrop-filter:blur(8px);box-shadow:0 4px 12px rgba(0,0,0,0.3);white-space:nowrap;';
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 2500);
+  };
+
+  const handleShare = () => {
+    if (navigator.share) {
+      navigator.share({
+        title: video.title,
+        text: video.description,
+        url: window.location.href
+      }).catch(err => console.log('Error sharing:', err));
+    } else {
+      try {
+        navigator.clipboard.writeText(window.location.href);
+        showToast('Link copied to clipboard!');
+      } catch (err) {
+        showToast('Share: ' + video.title);
+      }
+    }
+  };
+
+  const showDimensionInfo = (dimension, score, description) => {
+    showToast(`${dimension}: ${score.toFixed(1)}/5.0 — ${description}`);
   };
 
   return (
@@ -106,14 +162,19 @@ const VideoPlayer = ({ video, isActive, onVideoEnd, onEvaluate, onViewEvaluation
       {/* Right Side Actions */}
       <div className="video-actions">
         {/* Evaluate Button */}
-        <button
-          className="action-button evaluate-button"
-          onClick={onEvaluate}
-          title="Evaluate this video"
-        >
-          <span className="icon evaluate-icon">⭐</span>
-          <span className="action-label">Rate</span>
-        </button>
+        {currentUser && (
+          <button
+            className="action-button evaluate-button"
+            onClick={onEvaluate}
+            title={currentUser.role === 'judge' ? 'Judge this video' : 'Evaluate this video'}
+            style={{
+              background: currentUser.role === 'judge' ? 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)' : undefined
+            }}
+          >
+            <span className="icon evaluate-icon">⭐</span>
+            <span className="action-label">{currentUser.role === 'judge' ? 'Judge' : 'Rate'}</span>
+          </button>
+        )}
 
         {/* Aggregate Score */}
         <button
@@ -121,33 +182,71 @@ const VideoPlayer = ({ video, isActive, onVideoEnd, onEvaluate, onViewEvaluation
           onClick={() => setShowInfo(!showInfo)}
         >
           <div className="score-circle">
-            <span className="score-value">{video.aggregateScore.toFixed(1)}</span>
+            <span className="score-value">{(video.aggregateScore || 0).toFixed(1)}</span>
           </div>
           <span className="action-label">Score</span>
         </button>
 
-        {/* Scientific Clarity */}
-        <button className="action-button">
+        {/* Scientific Clarity — score only */}
+        <button
+          className="action-button"
+          onClick={() => showDimensionInfo('Scientific Clarity', video.scientificClarity || 0, 'How well is the science explained? Clear concepts, accurate information, and logical flow.')}
+          title="Scientific Clarity score"
+        >
           <span className="icon">🔬</span>
-          <span className="action-label">{video.scientificClarity.toFixed(1)}</span>
+          <span className="action-label">{(video.scientificClarity || 0).toFixed(1)}</span>
         </button>
 
-        {/* Humanity & Care */}
-        <button className="action-button">
+        {/* Humanity & Care — score only */}
+        <button
+          className="action-button"
+          onClick={() => showDimensionInfo('Humanity & Care', video.humanityCare || 0, 'Social impact and community benefit. Empathy, solving real problems.')}
+          title="Humanity & Care score"
+        >
           <span className="icon">❤️</span>
-          <span className="action-label">{video.humanityCare.toFixed(1)}</span>
+          <span className="action-label">{(video.humanityCare || 0).toFixed(1)}</span>
         </button>
 
-        {/* Real-Life Impact */}
-        <button className="action-button">
+        {/* Real-Life Impact — score only */}
+        <button
+          className="action-button"
+          onClick={() => showDimensionInfo('Real-Life Impact', video.realLifeImpact || 0, 'How practical and useful is it? Applicability, feasibility, sustainability.')}
+          title="Real-Life Impact score"
+        >
           <span className="icon">🌍</span>
-          <span className="action-label">{video.realLifeImpact.toFixed(1)}</span>
+          <span className="action-label">{(video.realLifeImpact || 0).toFixed(1)}</span>
         </button>
 
-        {/* Original Thinking */}
-        <button className="action-button">
+        {/* Original Thinking — score only */}
+        <button
+          className="action-button"
+          onClick={() => showDimensionInfo('Original Thinking', video.originalThinking || 0, 'How innovative is the approach? Creativity, uniqueness, and novel solutions.')}
+          title="Original Thinking score"
+        >
           <span className="icon">💡</span>
-          <span className="action-label">{video.originalThinking.toFixed(1)}</span>
+          <span className="action-label">{(video.originalThinking || 0).toFixed(1)}</span>
+        </button>
+
+        {/* Like — after all score dimensions */}
+        <button
+          className="action-button"
+          onClick={handleLike}
+          title={isLiked ? 'Unlike this video' : 'Like this video'}
+        >
+          <span className="icon">{isLiked ? '👍' : '👍'}</span>
+          <span className="action-label" style={{ color: isLiked ? '#ef4444' : undefined }}>
+            {likeCount}
+          </span>
+        </button>
+
+        {/* Share — after all score dimensions */}
+        <button
+          className="action-button"
+          onClick={handleShare}
+          title="Share this video"
+        >
+          <span className="icon">📤</span>
+          <span className="action-label">Share</span>
         </button>
 
         {/* View All Evaluations */}
@@ -161,7 +260,7 @@ const VideoPlayer = ({ video, isActive, onVideoEnd, onEvaluate, onViewEvaluation
         </button>
 
         {/* Views */}
-        <button className="action-button">
+        <button className="action-button" title="View count">
           <span className="icon">👁️</span>
           <span className="action-label">{formatViews(video.views)}</span>
         </button>

@@ -10,25 +10,25 @@ const ScoreDisplay = ({ video }) => {
     {
       name: 'Scientific Clarity',
       icon: '🔬',
-      score: video.scientificClarity,
+      score: video.scientificClarity || 0,
       description: 'How well the science is explained'
     },
     {
       name: 'Humanity & Care',
       icon: '❤️',
-      score: video.humanityCare,
+      score: video.humanityCare || 0,
       description: 'Social impact and community benefit'
     },
     {
       name: 'Real-Life Impact',
       icon: '🌍',
-      score: video.realLifeImpact,
+      score: video.realLifeImpact || 0,
       description: 'Practical applications and usefulness'
     },
     {
       name: 'Original Thinking',
       icon: '💡',
-      score: video.originalThinking,
+      score: video.originalThinking || 0,
       description: 'Innovation and creative approach'
     }
   ];
@@ -57,21 +57,21 @@ const ScoreDisplay = ({ video }) => {
         <h3 className="section-title">Overall Score</h3>
         <div className="aggregate-score">
           <div className="score-circle-large">
-            <span className="score-number">{video.aggregateScore.toFixed(2)}</span>
+            <span className="score-number">{(video.aggregateScore || 0).toFixed(2)}</span>
             <span className="score-max">/ 5.00</span>
           </div>
           <div className="score-legend">
             <div className="legend-item">
               <span className="legend-dot judge"></span>
-              <span className="legend-text">Judge (70%): {video.judgeEvaluations} reviews</span>
+              <span className="legend-text">Judge (70%): {video.judgeEvaluations || 0} reviews</span>
             </div>
             <div className="legend-item">
               <span className="legend-dot teacher"></span>
-              <span className="legend-text">Teacher (20%): {video.teacherEvaluations} reviews</span>
+              <span className="legend-text">Teacher (20%): {video.teacherEvaluations || 0} reviews</span>
             </div>
             <div className="legend-item">
               <span className="legend-dot student"></span>
-              <span className="legend-text">Student (10%): {video.studentEvaluations} reviews</span>
+              <span className="legend-text">Student (10%): {video.studentEvaluations || 0} reviews</span>
             </div>
           </div>
         </div>
@@ -100,15 +100,17 @@ const ScoreDisplay = ({ video }) => {
         <h3 className="section-title">Evaluation Statistics</h3>
         <div className="stats-grid">
           <div className="stat-item">
-            <span className="stat-value">{video.totalEvaluations}</span>
+            <span className="stat-value">{video.totalEvaluations || 0}</span>
             <span className="stat-label">Total Reviews</span>
           </div>
           <div className="stat-item">
-            <span className="stat-value">{video.views.toLocaleString()}</span>
+            <span className="stat-value">{(video.views || 0).toLocaleString()}</span>
             <span className="stat-label">Views</span>
           </div>
           <div className="stat-item">
-            <span className="stat-value">{((video.totalEvaluations / video.views) * 100).toFixed(1)}%</span>
+            <span className="stat-value">
+              {video.views ? ((video.totalEvaluations || 0) / video.views * 100).toFixed(1) : '0.0'}%
+            </span>
             <span className="stat-label">Engagement</span>
           </div>
         </div>

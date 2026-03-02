@@ -33,25 +33,30 @@ const VideoApproval = ({ currentUser }) => {
         );
       } else if (isTeacher) {
         // Teachers see pending videos from their school only
+        // Use single filter + in-memory filter to avoid composite index requirement
         videosQuery = query(
           collection(db, 'videos'),
-          where('status', '==', 'pending'),
-          where('uploaderSchool', '==', currentUser.schoolName)
+          where('status', '==', 'pending')
         );
       }
 
       const snapshot = await getDocs(videosQuery);
-      const videos = snapshot.docs.map(doc => ({
+      let allVideos = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
         uploadedAt: doc.data().uploadedAt?.toDate?.()?.toISOString() || new Date().toISOString()
       }));
 
+      // Filter by school in memory for teachers (case-insensitive, trimmed)
+      const videos = isTeacher
+        ? allVideos.filter(v =>
+            v.uploaderSchool?.toLowerCase().trim() === currentUser.schoolName?.toLowerCase().trim()
+          )
+        : allVideos;
+
       setPendingVideos(videos);
 
-      const mySchoolCount = isTeacher
-        ? videos.filter(v => v.uploaderSchool === currentUser.schoolName).length
-        : 0;
+      const mySchoolCount = isTeacher ? videos.length : 0;
 
       setStats({
         total: videos.length,
@@ -141,8 +146,25 @@ const VideoApproval = ({ currentUser }) => {
   return (
     <div className="video-approval-container">
       <div className="approval-header">
-        <h2>Video Approvals</h2>
-        <p className="subtitle">Review and approve student video submissions</p>
+        <div>
+          <h2>Video Approvals</h2>
+          <p className="subtitle">Review and approve student video submissions</p>
+        </div>
+        <button
+          className="refresh-button"
+          onClick={loadPendingVideos}
+          style={{
+            padding: '10px 20px',
+            background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+            color: 'white',
+            border: 'none',
+            borderRadius: '8px',
+            fontWeight: 600,
+            cursor: 'pointer'
+          }}
+        >
+          🔄 Refresh
+        </button>
       </div>
 
       {/* Stats */}
@@ -165,6 +187,12 @@ const VideoApproval = ({ currentUser }) => {
           <span className="empty-icon">✓</span>
           <h3>All Caught Up!</h3>
           <p>No pending videos to review at this time.</p>
+          <p style={{ marginTop: '10px', fontSize: '14px', color: '#64748b' }}>
+            {isTeacher
+              ? 'Videos from your school will appear here once students upload them.'
+              : 'All pending videos from all schools will appear here.'
+            }
+          </p>
         </div>
       ) : (
         <div className="pending-videos-list">
