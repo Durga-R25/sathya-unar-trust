@@ -190,6 +190,14 @@ service cloud.firestore {
     // ========================================================================
     // COMPETITION SETTINGS COLLECTION
     // ========================================================================
+
+    // systemUpdate: any authenticated user can write (bundle hash + forceLogoutAt signal)
+    match /settings/systemUpdate {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() &&
+        request.resource.data.keys().hasOnly(['bundleHash', 'forceLogoutAt', 'message']);
+    }
+
     match /settings/{settingId} {
       // Anyone authenticated can read settings
       allow read: if isAuthenticated();

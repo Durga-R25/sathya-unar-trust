@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
+import { collection, query, where, getDocs, orderBy, doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from './config/firebase';
 import { UserProvider, useUser } from './context/UserContext';
 import { canUploadVideo, canAccessAdminPanel } from './services/authService';
@@ -80,7 +80,32 @@ const AppContent = () => {
     };
   }, []);
 
-  // Detect new builds via asset-manifest.json bundle hash and auto-logout + clear cache
+  // ─── Update & Force-Logout helpers ───────────────────────────────────────────
+
+  // Start the 5-second countdown banner then logout + clear + reload
+  const startForceLogout = (message) => {
+    setUpdateBanner({ text: message, secs: 5 });
+    let secs = 5;
+    const tick = setInterval(() => {
+      secs -= 1;
+      setUpdateBanner({ text: message, secs });
+      if (secs <= 0) {
+        clearInterval(tick);
+        (async () => {
+          try { await logout(); } catch (_) {}
+          localStorage.clear();
+          sessionStorage.clear();
+          if ('caches' in window) {
+            const names = await caches.keys();
+            await Promise.all(names.map(n => caches.delete(n)));
+          }
+          window.location.reload(true);
+        })();
+      }
+    }, 1000);
+  };
+
+  // Detect new build via asset-manifest.json; write signal to Firestore for ALL sessions
   useEffect(() => {
     const checkForUpdate = async () => {
       try {
@@ -91,26 +116,17 @@ const AppContent = () => {
 
         const cachedBundle = localStorage.getItem('appBundle');
         if (cachedBundle && cachedBundle !== currentBundle) {
-          // New build deployed — start 5-second countdown then auto-logout + clear + reload
-          let secs = 5;
-          setUpdateBanner(secs);
-          const tick = setInterval(() => {
-            secs -= 1;
-            setUpdateBanner(secs);
-            if (secs <= 0) {
-              clearInterval(tick);
-              (async () => {
-                try { await logout(); } catch (_) {}
-                localStorage.clear();
-                sessionStorage.clear();
-                if ('caches' in window) {
-                  const names = await caches.keys();
-                  await Promise.all(names.map(n => caches.delete(n)));
-                }
-                window.location.reload(true);
-              })();
-            }
-          }, 1000);
+          // Write force-logout signal to Firestore so ALL open sessions get notified
+          try {
+            await setDoc(doc(db, 'settings', 'systemUpdate'), {
+              bundleHash: currentBundle,
+              forceLogoutAt: serverTimestamp(),
+              message: 'System update applied — bug fixes deployed.'
+            }, { merge: true });
+          } catch (_) {
+            // May fail if not yet authenticated — that's fine, local flow still runs
+          }
+          startForceLogout('System update — logging out to apply bug fixes');
           return;
         }
         localStorage.setItem('appBundle', currentBundle);
@@ -120,6 +136,87 @@ const AppContent = () => {
     };
     checkForUpdate();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Poll Firestore every 5 min for force-logout from OTHER sessions / devices
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    // Record login time so we can ignore force-logout signals issued before this login
+    if (!localStorage.getItem('loginTime')) {
+      localStorage.setItem('loginTime', new Date().toISOString());
+    }
+
+    const checkForceLogout = async () => {
+      try {
+        const snap = await getDoc(doc(db, 'settings', 'systemUpdate'));
+        if (!snap.exists()) return;
+
+        const data = snap.data();
+        if (!data.forceLogoutAt) return;
+
+        const forceLogoutAt = data.forceLogoutAt.toDate
+          ? data.forceLogoutAt.toDate()
+          : new Date(data.forceLogoutAt);
+
+        const loginTime = new Date(localStorage.getItem('loginTime') || 0);
+        // Skip if we logged in AFTER the force-logout was issued (already fresh)
+        if (loginTime > forceLogoutAt) return;
+
+        const lastForceLogout = localStorage.getItem('lastForceLogout');
+        if (lastForceLogout && new Date(lastForceLogout) >= forceLogoutAt) return;
+
+        // Mark so we don't loop
+        localStorage.setItem('lastForceLogout', forceLogoutAt.toISOString());
+        startForceLogout(data.message || 'System update — logging out to apply bug fixes');
+      } catch (e) {
+        console.log('[ScienceVerse] Force-logout check skipped:', e);
+      }
+    };
+
+    checkForceLogout(); // immediate check on login
+    const interval = setInterval(checkForceLogout, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [isAuthenticated]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // After login: inject system-update notification into the bell if there's a recent one
+  const checkSystemNotification = async () => {
+    try {
+      const snap = await getDoc(doc(db, 'settings', 'systemUpdate'));
+      if (!snap.exists()) return;
+
+      const data = snap.data();
+      if (!data.forceLogoutAt || !data.message) return;
+
+      const forceLogoutAt = data.forceLogoutAt.toDate
+        ? data.forceLogoutAt.toDate()
+        : new Date(data.forceLogoutAt);
+
+      // Only show if it was within the last 7 days
+      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+      if (forceLogoutAt < sevenDaysAgo) return;
+
+      const lastSeen = localStorage.getItem('lastSeenSystemUpdate');
+      if (lastSeen && new Date(lastSeen) >= forceLogoutAt) return;
+
+      localStorage.setItem('lastSeenSystemUpdate', forceLogoutAt.toISOString());
+
+      const systemNotif = {
+        id: `system-update-${forceLogoutAt.getTime()}`,
+        icon: '🔧',
+        title: 'System Update',
+        message: data.message,
+        createdAt: forceLogoutAt,
+        read: false,
+        isSystem: true,
+      };
+      setNotifications(prev => [systemNotif, ...prev.filter(n => !n.isSystem)]);
+      setUnreadCount(prev => prev + 1);
+    } catch (e) {
+      console.log('[ScienceVerse] System notification check skipped:', e);
+    }
+  };
+
+  // ─────────────────────────────────────────────────────────────────────────────
 
   // Pause all videos when any modal is open (admin panel, profile, upload, etc.)
   const isAnyModalOpen = showAdminPanel || showProfileScreen || showUploadScreen || showDiscoveryScreen || showEvaluationPanel || showEvaluationHistory || showAllNotifications || showStudentSearch;
@@ -153,10 +250,12 @@ const AppContent = () => {
       setUnreadCount(unread);
     } catch (error) {
       console.error('Error loading notifications:', error);
-      // If notifications collection doesn't exist or has no data, just use empty array
       setNotifications([]);
       setUnreadCount(0);
     }
+
+    // Inject system-update notification into the bell if there's a recent one
+    checkSystemNotification();
   };
 
   // Convert a Firestore Timestamp (or any date-like value) to an ISO string.
@@ -339,7 +438,7 @@ const AppContent = () => {
   // Update notification banner (shown above everything, including login screen)
   const UpdateBanner = updateBanner !== null ? (
     <div className="update-banner">
-      🔄 New update detected — logging out and clearing cache in <strong>{updateBanner}s</strong> to apply the latest changes. Please wait...
+      🔄 {updateBanner.text} — logging out in <strong>{updateBanner.secs}s</strong>. Please wait...
     </div>
   ) : null;
 
