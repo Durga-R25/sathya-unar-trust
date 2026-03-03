@@ -159,13 +159,8 @@ const VideoPlayer = ({ video, currentUser, isActive, onVideoEnd, onEvaluate, onV
         <div className="progress-fill" style={{ width: `${progress}%` }} />
       </div>
 
-      {/* Right Side Actions — stop touch propagation so taps don't trigger the feed swipe handler */}
-      <div
-        className="video-actions"
-        onTouchStart={e => e.stopPropagation()}
-        onTouchMove={e => e.stopPropagation()}
-        onTouchEnd={e => e.stopPropagation()}
-      >
+      {/* Right Side Actions */}
+      <div className="video-actions">
         {/* Evaluate Button */}
         {currentUser && (
           <button
