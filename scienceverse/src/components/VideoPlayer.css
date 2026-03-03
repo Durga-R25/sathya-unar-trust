@@ -62,12 +62,20 @@
 .video-actions {
   position: absolute;
   right: 12px;
-  right: max(12px, env(safe-area-inset-right, 12px));
-  bottom: 120px;
+  top: 80px;        /* anchor from top so Rate button is always visible */
   display: flex;
   flex-direction: column;
   gap: 16px;
   z-index: 30;
+  /* allow buttons to scroll if they overflow on very small screens */
+  max-height: calc(100vh - 160px);
+  overflow-y: auto;
+  scrollbar-width: none;        /* Firefox */
+  -ms-overflow-style: none;     /* IE/Edge */
+}
+
+.video-actions::-webkit-scrollbar {
+  display: none;                /* Chrome/Safari */
 }
 
 @supports (padding: max(0px)) {
@@ -288,10 +296,11 @@
     font-size: 12px;
   }
 
-  /* Compact action buttons so all 8 fit on screen without overflowing */
+  /* Compact action buttons so all fit on screen without overflowing */
   .video-actions {
     gap: 6px;
-    bottom: 90px;
+    top: 70px;
+    max-height: calc(100vh - 140px);
   }
 
   .action-button {

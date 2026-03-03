@@ -21,8 +21,6 @@ const VideoFeed = ({ videos, currentUser, onEvaluate, onViewEvaluations, evaluat
   const [currentIndex, setCurrentIndex] = useState(getInitialIndex());
   const [isTransitioning, setIsTransitioning] = useState(false);
   const containerRef = useRef(null);
-  const touchStartY = useRef(0);
-  const touchEndY = useRef(0);
 
   // Update current index when initialVideoId changes
   useEffect(() => {
@@ -70,18 +68,14 @@ const VideoFeed = ({ videos, currentUser, onEvaluate, onViewEvaluations, evaluat
   };
 
   const handlers = useSwipeable({
-    onSwipedUp: (eventData) => {
-      console.log('Swiped up');
-      goToNext();
-    },
-    onSwipedDown: (eventData) => {
-      console.log('Swiped down');
-      goToPrevious();
-    },
+    onSwipedUp: () => goToNext(),
+    onSwipedDown: () => goToPrevious(),
     preventScrollOnSwipe: true,
     trackTouch: true,
-    delta: 30,
-    swipeDuration: 1000
+    trackMouse: false,
+    delta: 60,          // require 60px intentional swipe — prevents accidental swipes on button taps
+    swipeDuration: 500,
+    touchEventOptions: { passive: false },
   });
 
   // Handle video end - auto-advance to next
@@ -103,42 +97,11 @@ const VideoFeed = ({ videos, currentUser, onEvaluate, onViewEvaluations, evaluat
     return () => window.removeEventListener('keydown', handleKeyPress);
   }, [currentIndex, isTransitioning]);
 
-  // Native touch event handlers for better mobile support
-  const handleTouchStart = (e) => {
-    touchStartY.current = e.touches[0].clientY;
-  };
-
-  const handleTouchMove = (e) => {
-    touchEndY.current = e.touches[0].clientY;
-  };
-
-  const handleTouchEnd = () => {
-    const swipeDistance = touchStartY.current - touchEndY.current;
-    const minSwipeDistance = 50; // Minimum swipe distance in pixels
-
-    if (Math.abs(swipeDistance) > minSwipeDistance) {
-      if (swipeDistance > 0) {
-        // Swiped up - go to next video
-        goToNext();
-      } else {
-        // Swiped down - go to previous video
-        goToPrevious();
-      }
-    }
-
-    // Reset values
-    touchStartY.current = 0;
-    touchEndY.current = 0;
-  };
-
       return (
       <div
         className="video-feed"
         {...handlers}
         ref={containerRef}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
       >
         <div
           className="video-container"

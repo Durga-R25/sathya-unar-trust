@@ -32,6 +32,7 @@ const AppContent = () => {
   const { currentUser, isAuthenticated, login, logout } = useUser();
   const [currentTab, setCurrentTab] = useState('home');
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [updateBanner, setUpdateBanner] = useState(null); // { countdown } when a new build is detected
 
   // Videos state
   const [videos, setVideos] = useState([]);
@@ -78,6 +79,47 @@ const AppContent = () => {
       window.removeEventListener('offline', handleOffline);
     };
   }, []);
+
+  // Detect new builds via asset-manifest.json bundle hash and auto-logout + clear cache
+  useEffect(() => {
+    const checkForUpdate = async () => {
+      try {
+        const res = await fetch('/asset-manifest.json?t=' + Date.now());
+        const manifest = await res.json();
+        const currentBundle = manifest.files?.['main.js'];
+        if (!currentBundle) return;
+
+        const cachedBundle = localStorage.getItem('appBundle');
+        if (cachedBundle && cachedBundle !== currentBundle) {
+          // New build deployed — start 5-second countdown then auto-logout + clear + reload
+          let secs = 5;
+          setUpdateBanner(secs);
+          const tick = setInterval(() => {
+            secs -= 1;
+            setUpdateBanner(secs);
+            if (secs <= 0) {
+              clearInterval(tick);
+              (async () => {
+                try { await logout(); } catch (_) {}
+                localStorage.clear();
+                sessionStorage.clear();
+                if ('caches' in window) {
+                  const names = await caches.keys();
+                  await Promise.all(names.map(n => caches.delete(n)));
+                }
+                window.location.reload(true);
+              })();
+            }
+          }, 1000);
+          return;
+        }
+        localStorage.setItem('appBundle', currentBundle);
+      } catch (e) {
+        console.log('[ScienceVerse] Update check skipped:', e);
+      }
+    };
+    checkForUpdate();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Pause all videos when any modal is open (admin panel, profile, upload, etc.)
   const isAnyModalOpen = showAdminPanel || showProfileScreen || showUploadScreen || showDiscoveryScreen || showEvaluationPanel || showEvaluationHistory || showAllNotifications || showStudentSearch;
@@ -294,13 +336,28 @@ const AppContent = () => {
     return new Date(date).toLocaleDateString();
   };
 
+  // Update notification banner (shown above everything, including login screen)
+  const UpdateBanner = updateBanner !== null ? (
+    <div className="update-banner">
+      🔄 New update detected — logging out and clearing cache in <strong>{updateBanner}s</strong> to apply the latest changes. Please wait...
+    </div>
+  ) : null;
+
   // Show login screen if not authenticated
   if (!isAuthenticated) {
-    return <LoginScreen onLoginSuccess={handleLoginSuccess} />;
+    return (
+      <>
+        {UpdateBanner}
+        <LoginScreen onLoginSuccess={handleLoginSuccess} />
+      </>
+    );
   }
 
   return (
     <div className="app">
+      {/* Update Banner */}
+      {UpdateBanner}
+
       {/* Offline Indicator */}
       {!isOnline && (
         <div className="offline-banner">
