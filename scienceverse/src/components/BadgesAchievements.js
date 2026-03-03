@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, getCountFromServer } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import './BadgesAchievements.css';
 
@@ -157,6 +157,7 @@ const BadgesAchievements = ({ currentUser }) => {
   const loadBadgesAndStats = async () => {
     try {
       setIsLoading(true);
+      const userRole = (currentUser.role || '').toLowerCase();
 
       // Get user's videos
       const videosQuery = query(
@@ -166,13 +167,37 @@ const BadgesAchievements = ({ currentUser }) => {
       const videosSnapshot = await getDocs(videosQuery);
       const userVideos = videosSnapshot.docs.map(doc => doc.data());
 
+      // Get total category count for allCategories badge threshold
+      let totalCategories = 8; // fallback
+      try {
+        const catsSnap = await getCountFromServer(collection(db, 'categories'));
+        totalCategories = catsSnap.data().count || 8;
+      } catch (e) {
+        console.warn('Could not load category count, using fallback:', e);
+      }
+
+      // For teachers: count students they registered (for mentor badges)
+      let studentsMentored = 0;
+      if (userRole === 'teacher' || userRole === 'admin') {
+        try {
+          const studentsQuery = query(
+            collection(db, 'users'),
+            where('createdBy', '==', currentUser.uid),
+            where('role', '==', 'student')
+          );
+          const studentsSnap = await getCountFromServer(studentsQuery);
+          studentsMentored = studentsSnap.data().count || 0;
+        } catch (e) {
+          console.warn('Could not load mentored students count:', e);
+        }
+      }
+
       // Calculate earned badges
-      const earnedBadges = calculateBadges(userVideos, currentUser);
+      const earnedBadges = calculateBadges(userVideos, currentUser, studentsMentored, totalCategories);
       setUserBadges(earnedBadges);
 
       // Get school statistics
       if (currentUser.schoolName) {
-        // Use single filter + in-memory filter to avoid composite index requirement
         const schoolVideosQuery = query(
           collection(db, 'videos'),
           where('uploaderSchool', '==', currentUser.schoolName)
@@ -196,9 +221,10 @@ const BadgesAchievements = ({ currentUser }) => {
     }
   };
 
-  const calculateBadges = (videos, user) => {
+  const calculateBadges = (videos, user, studentsMentored = 0, totalCategories = 8) => {
     const badges = [];
     const videoCount = videos.length;
+    const userRole = (user.role || '').toLowerCase();
 
     // Upload milestones
     if (videoCount >= 1) badges.push(BADGE_DEFINITIONS.firstVideo);
@@ -206,35 +232,28 @@ const BadgesAchievements = ({ currentUser }) => {
     if (videoCount >= 10) badges.push(BADGE_DEFINITIONS.videoMaker10);
     if (videoCount >= 25) badges.push(BADGE_DEFINITIONS.videoMaker25);
 
-    // Quality badges
-    const highRatedVideos = videos.filter(v => v.aggregateScore >= 4);
-    if (highRatedVideos.length > 0) badges.push(BADGE_DEFINITIONS.highRated);
-
-    const perfectVideos = videos.filter(v => v.aggregateScore === 5);
-    if (perfectVideos.length > 0) badges.push(BADGE_DEFINITIONS.perfectScore);
-
-    const trendingVideos = videos.filter(v => v.totalEvaluations >= 50);
-    if (trendingVideos.length > 0) badges.push(BADGE_DEFINITIONS.trendingVideo);
+    // Quality badges — use || 0 to guard missing fields
+    if (videos.some(v => (v.aggregateScore || 0) >= 4)) badges.push(BADGE_DEFINITIONS.highRated);
+    if (videos.some(v => (v.aggregateScore || 0) >= 5)) badges.push(BADGE_DEFINITIONS.perfectScore);
+    if (videos.some(v => (v.totalEvaluations || 0) >= 50)) badges.push(BADGE_DEFINITIONS.trendingVideo);
 
     // Category diversity
-    const uniqueCategories = new Set(videos.map(v => v.category));
+    const uniqueCategories = new Set(videos.map(v => v.category).filter(Boolean));
     if (uniqueCategories.size >= 5) badges.push(BADGE_DEFINITIONS.categoryExpert);
-    if (uniqueCategories.size >= 10) badges.push(BADGE_DEFINITIONS.allCategories);
+    if (totalCategories > 0 && uniqueCategories.size >= totalCategories) {
+      badges.push(BADGE_DEFINITIONS.allCategories);
+    }
 
-    // Early adopter (first 10 videos overall)
-    const hasEarlyVideo = videos.some(v => {
-      const videoNumber = parseInt(v.videoId.split('_')[1]);
-      return videoNumber < 10;
-    });
-    if (hasEarlyVideo) badges.push(BADGE_DEFINITIONS.pioneer);
+    // Teacher mentor badges — based on students they registered
+    if (userRole === 'teacher' || userRole === 'admin') {
+      if (studentsMentored >= 10) badges.push(BADGE_DEFINITIONS.mentorTeacher);
+      if (studentsMentored >= 25) badges.push(BADGE_DEFINITIONS.inspiringTeacher);
+    }
+
+    // pioneer, earlyBird, teamPlayer, schoolChampion, schoolLeader are
+    // system-awarded and cannot be computed client-side; they stay locked.
 
     return badges;
-  };
-
-  const getBadgeProgress = (badge) => {
-    if (!badge.requirement) return 100;
-    // This would calculate actual progress based on user data
-    return 100; // Placeholder
   };
 
   if (isLoading) {
