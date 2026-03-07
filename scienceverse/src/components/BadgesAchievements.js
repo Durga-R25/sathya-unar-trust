@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { collection, query, where, getDocs, getDoc, doc, getCountFromServer } from 'firebase/firestore';
+import { collection, query, where, getDocs, getCountFromServer, documentId } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import './BadgesAchievements.css';
 
@@ -225,18 +225,25 @@ const BadgesAchievements = ({ currentUser }) => {
         teacherStudentMap[tid].count++;
       });
 
-      // Fetch teacher names directly by UID (avoids role case-sensitivity issues)
+      // Fetch teacher names using a list query (get is blocked for other users by rules)
       const teacherUids = Object.keys(teacherStudentMap);
-      await Promise.all(
-        teacherUids.map(async (uid) => {
-          try {
-            const snap = await getDoc(doc(db, 'users', uid));
-            if (snap.exists()) {
-              teacherStudentMap[uid].name = snap.data().name || 'Teacher';
+      if (teacherUids.length > 0) {
+        // Firestore 'in' supports up to 30 items per query
+        const chunks = [];
+        for (let i = 0; i < teacherUids.length; i += 30) {
+          chunks.push(teacherUids.slice(i, i + 30));
+        }
+        await Promise.all(chunks.map(async (chunk) => {
+          const snap = await getDocs(
+            query(collection(db, 'users'), where(documentId(), 'in', chunk))
+          );
+          snap.docs.forEach(d => {
+            if (teacherStudentMap[d.id]) {
+              teacherStudentMap[d.id].name = d.data().name || 'Teacher';
             }
-          } catch (e) { /* leave as null */ }
-        })
-      );
+          });
+        }));
+      }
 
       const topTeachers = Object.values(teacherStudentMap)
         .map(t => ({ ...t, name: t.name || 'Teacher' }))
