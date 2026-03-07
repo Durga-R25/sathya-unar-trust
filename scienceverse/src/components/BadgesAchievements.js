@@ -3,141 +3,87 @@ import { collection, query, where, getDocs, getCountFromServer } from 'firebase/
 import { db } from '../config/firebase';
 import './BadgesAchievements.css';
 
-/**
- * BadgesAchievements Component
- * Gamification system to motivate schools, teachers, and students
- */
-
-// Define all available badges
 const BADGE_DEFINITIONS = {
   // Upload Milestones
   firstVideo: {
-    id: 'firstVideo',
-    name: 'First Steps',
-    icon: '🎬',
-    description: 'Uploaded your first video',
-    category: 'upload',
-    requirement: 1
+    id: 'firstVideo', name: 'First Steps', icon: '🎬',
+    description: 'Uploaded your first video', category: 'upload', requirement: 1
   },
   videoMaker5: {
-    id: 'videoMaker5',
-    name: 'Video Creator',
-    icon: '🎥',
-    description: 'Uploaded 5 videos',
-    category: 'upload',
-    requirement: 5
+    id: 'videoMaker5', name: 'Video Creator', icon: '🎥',
+    description: 'Uploaded 5 videos', category: 'upload', requirement: 5
   },
   videoMaker10: {
-    id: 'videoMaker10',
-    name: 'Content Producer',
-    icon: '🎞️',
-    description: 'Uploaded 10 videos',
-    category: 'upload',
-    requirement: 10
+    id: 'videoMaker10', name: 'Content Producer', icon: '🎞️',
+    description: 'Uploaded 10 videos', category: 'upload', requirement: 10
   },
   videoMaker25: {
-    id: 'videoMaker25',
-    name: 'Science Broadcaster',
-    icon: '📡',
-    description: 'Uploaded 25 videos',
-    category: 'upload',
-    requirement: 25
+    id: 'videoMaker25', name: 'Science Broadcaster', icon: '📡',
+    description: 'Uploaded 25 videos', category: 'upload', requirement: 25
   },
 
   // Quality Badges
   highRated: {
-    id: 'highRated',
-    name: 'Quality Star',
-    icon: '⭐',
-    description: 'Video rated 4+ stars',
-    category: 'quality'
+    id: 'highRated', name: 'Quality Star', icon: '⭐',
+    description: 'Video rated 4+ stars', category: 'quality'
   },
   perfectScore: {
-    id: 'perfectScore',
-    name: 'Perfect Score',
-    icon: '💯',
-    description: 'Received a perfect 5.0 rating',
-    category: 'quality'
+    id: 'perfectScore', name: 'Perfect Score', icon: '💯',
+    description: 'Received a perfect 5.0 rating', category: 'quality'
   },
   trendingVideo: {
-    id: 'trendingVideo',
-    name: 'Trending',
-    icon: '🔥',
-    description: 'Video with 50+ evaluations',
-    category: 'quality'
+    id: 'trendingVideo', name: 'Trending', icon: '🔥',
+    description: 'Video with 50+ evaluations', category: 'quality'
   },
 
   // Category Expert
   categoryExpert: {
-    id: 'categoryExpert',
-    name: 'Category Expert',
-    icon: '🎓',
-    description: 'Uploaded in 5 different categories',
-    category: 'diversity'
+    id: 'categoryExpert', name: 'Category Expert', icon: '🎓',
+    description: 'Uploaded in 5 different categories', category: 'diversity'
   },
   allCategories: {
-    id: 'allCategories',
-    name: 'Science Master',
-    icon: '🔬',
-    description: 'Uploaded in all categories',
-    category: 'diversity'
+    id: 'allCategories', name: 'Science Master', icon: '🔬',
+    description: 'Uploaded in all categories', category: 'diversity'
   },
 
   // School Pride
   schoolChampion: {
-    id: 'schoolChampion',
-    name: 'School Champion',
-    icon: '🏫',
-    description: 'Top contributor in your school',
-    category: 'school'
+    id: 'schoolChampion', name: 'School Champion', icon: '🏫',
+    description: 'Top video contributor in your school', category: 'school'
   },
   schoolLeader: {
-    id: 'schoolLeader',
-    name: 'School Leader',
-    icon: '👑',
-    description: 'School ranked in top 10',
-    category: 'school'
+    id: 'schoolLeader', name: 'School Leader', icon: '👑',
+    description: 'School ranked in top 3', category: 'school'
   },
 
   // Teacher Badges
+  firstStudent: {
+    id: 'firstStudent', name: 'First Mentor', icon: '🌱',
+    description: 'Registered your first student', category: 'teaching'
+  },
   mentorTeacher: {
-    id: 'mentorTeacher',
-    name: 'Mentor Teacher',
-    icon: '👨‍🏫',
-    description: 'Helped 10 students upload videos',
-    category: 'teaching'
+    id: 'mentorTeacher', name: 'Mentor Teacher', icon: '👨‍🏫',
+    description: 'Registered 5 students', category: 'teaching'
   },
   inspiringTeacher: {
-    id: 'inspiringTeacher',
-    name: 'Inspiring Educator',
-    icon: '✨',
-    description: 'Helped 25 students upload videos',
-    category: 'teaching'
+    id: 'inspiringTeacher', name: 'Inspiring Educator', icon: '✨',
+    description: 'Registered 10 students', category: 'teaching'
   },
 
   // Early Adopter
   earlyBird: {
-    id: 'earlyBird',
-    name: 'Early Bird',
-    icon: '🐦',
-    description: 'First to upload in a category',
-    category: 'special'
+    id: 'earlyBird', name: 'Early Bird', icon: '🐦',
+    description: 'First to upload in a category', category: 'special'
   },
   pioneer: {
-    id: 'pioneer',
-    name: 'Pioneer',
-    icon: '🚀',
-    description: 'Among first 10 users to upload',
-    category: 'special'
+    id: 'pioneer', name: 'Pioneer', icon: '🚀',
+    description: 'Among first 10 users to upload', category: 'special'
   },
 
   // Collaboration
   teamPlayer: {
-    id: 'teamPlayer',
-    name: 'Team Player',
-    icon: '🤝',
-    description: 'Collaborated on group project',
-    category: 'collaboration'
+    id: 'teamPlayer', name: 'Team Player', icon: '🤝',
+    description: 'Collaborated on group project', category: 'collaboration'
   }
 };
 
@@ -148,71 +94,147 @@ const BadgesAchievements = ({ currentUser }) => {
   const [showSchoolVideos, setShowSchoolVideos] = useState(false);
   const schoolVideosRef = useRef(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('my-badges'); // my-badges, all-badges, leaderboard
+  const [activeTab, setActiveTab] = useState('my-badges');
+  const [leaderboard, setLeaderboard] = useState({ students: [], schools: [], teachers: [] });
 
   useEffect(() => {
     loadBadgesAndStats();
-  }, [currentUser]);
+  }, [currentUser]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadBadgesAndStats = async () => {
     try {
       setIsLoading(true);
       const userRole = (currentUser.role || '').toLowerCase();
 
-      // Get user's videos
-      const videosQuery = query(
-        collection(db, 'videos'),
-        where('uploaderId', '==', currentUser.uid)
+      // --- Videos for badge calculation ---
+      // For students: videos where uploaderId == uid
+      // For teachers/admins: videos they uploaded on behalf of students (uploadedBy == uid)
+      //   PLUS their own direct uploads
+      const uploaderIdSnap = await getDocs(
+        query(collection(db, 'videos'), where('uploaderId', '==', currentUser.uid))
       );
-      const videosSnapshot = await getDocs(videosQuery);
-      const userVideos = videosSnapshot.docs.map(doc => doc.data());
+      let userVideos = uploaderIdSnap.docs.map(d => d.data());
 
-      // Get total category count for allCategories badge threshold
-      let totalCategories = 8; // fallback
+      if (userRole === 'teacher' || userRole === 'admin') {
+        const uploadedBySnap = await getDocs(
+          query(collection(db, 'videos'), where('uploadedBy', '==', currentUser.uid))
+        );
+        // Merge, deduplicating by videoId
+        const seenIds = new Set(userVideos.map(v => v.videoId));
+        uploadedBySnap.docs.forEach(d => {
+          const v = d.data();
+          if (!seenIds.has(v.videoId)) {
+            userVideos.push(v);
+            seenIds.add(v.videoId);
+          }
+        });
+      }
+
+      // --- Category count ---
+      let totalCategories = 8;
       try {
         const catsSnap = await getCountFromServer(collection(db, 'categories'));
         totalCategories = catsSnap.data().count || 8;
-      } catch (e) {
-        console.warn('Could not load category count, using fallback:', e);
-      }
+      } catch (e) { /* use fallback */ }
 
-      // For teachers: count students they registered (for mentor badges)
+      // --- Students mentored (teachers/admins) ---
       let studentsMentored = 0;
       if (userRole === 'teacher' || userRole === 'admin') {
         try {
-          const studentsQuery = query(
-            collection(db, 'users'),
-            where('createdBy', '==', currentUser.uid),
-            where('role', '==', 'student')
+          const studentsSnap = await getCountFromServer(
+            query(collection(db, 'users'),
+              where('createdBy', '==', currentUser.uid),
+              where('role', '==', 'student'))
           );
-          const studentsSnap = await getCountFromServer(studentsQuery);
           studentsMentored = studentsSnap.data().count || 0;
-        } catch (e) {
-          console.warn('Could not load mentored students count:', e);
-        }
+        } catch (e) { /* leave 0 */ }
       }
 
-      // Calculate earned badges
-      const earnedBadges = calculateBadges(userVideos, currentUser, studentsMentored, totalCategories);
-      setUserBadges(earnedBadges);
-
-      // Get school statistics
+      // --- School stats + champion check ---
+      let isSchoolChampion = false;
+      let schoolVideoList = [];
       if (currentUser.schoolName) {
-        const schoolVideosQuery = query(
-          collection(db, 'videos'),
-          where('uploaderSchool', '==', currentUser.schoolName)
+        const schoolSnap = await getDocs(
+          query(collection(db, 'videos'), where('uploaderSchool', '==', currentUser.schoolName))
         );
-        const schoolSnapshot = await getDocs(schoolVideosQuery);
-        const activeSchoolVideos = schoolSnapshot.docs
+        schoolVideoList = schoolSnap.docs
           .map(d => ({ id: d.id, ...d.data() }))
           .filter(v => v.status === 'active');
 
-        setSchoolVideos(activeSchoolVideos);
-        setSchoolStats({
-          totalVideos: activeSchoolVideos.length,
-          schoolName: currentUser.schoolName
+        // Count videos per uploader in this school
+        const countMap = {};
+        schoolVideoList.forEach(v => {
+          countMap[v.uploaderId] = (countMap[v.uploaderId] || 0) + 1;
         });
+        const myCount = countMap[currentUser.uid] || 0;
+        const maxCount = Math.max(...Object.values(countMap), 0);
+        if (myCount > 0 && myCount >= maxCount) isSchoolChampion = true;
+
+        setSchoolVideos(schoolVideoList);
+        setSchoolStats({ totalVideos: schoolVideoList.length, schoolName: currentUser.schoolName });
       }
+
+      // --- Leaderboard data (all active videos) ---
+      const allActiveSnap = await getDocs(
+        query(collection(db, 'videos'), where('status', '==', 'active'))
+      );
+      const allActive = allActiveSnap.docs.map(d => d.data());
+
+      // Top students by video count
+      const studentMap = {};
+      allActive.forEach(v => {
+        if (!v.uploaderId) return;
+        if (!studentMap[v.uploaderId]) {
+          studentMap[v.uploaderId] = {
+            name: v.uploaderName || 'Unknown',
+            school: v.uploaderSchool || '',
+            count: 0,
+            totalScore: 0
+          };
+        }
+        studentMap[v.uploaderId].count++;
+        studentMap[v.uploaderId].totalScore += v.aggregateScore || 0;
+      });
+      const topStudents = Object.values(studentMap)
+        .sort((a, b) => b.count - a.count || b.totalScore - a.totalScore)
+        .slice(0, 10);
+
+      // Top schools by active video count
+      const schoolMap = {};
+      allActive.forEach(v => {
+        const s = v.uploaderSchool || 'Unknown';
+        schoolMap[s] = (schoolMap[s] || 0) + 1;
+      });
+      const topSchools = Object.entries(schoolMap)
+        .map(([name, count]) => ({ name, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 10);
+
+      // Top teachers by students they registered
+      const teacherSnap = await getDocs(
+        query(collection(db, 'users'), where('role', '==', 'student'))
+      );
+      const teacherStudentMap = {};
+      teacherSnap.docs.forEach(d => {
+        const data = d.data();
+        const tid = data.createdBy;
+        if (!tid) return;
+        if (!teacherStudentMap[tid]) {
+          teacherStudentMap[tid] = { name: data.createdByName || 'Teacher', count: 0 };
+        }
+        teacherStudentMap[tid].count++;
+      });
+      const topTeachers = Object.values(teacherStudentMap)
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 10);
+
+      setLeaderboard({ students: topStudents, schools: topSchools, teachers: topTeachers });
+
+      // --- Calculate badges ---
+      const earnedBadges = calculateBadges(
+        userVideos, currentUser, studentsMentored, totalCategories, isSchoolChampion
+      );
+      setUserBadges(earnedBadges);
 
     } catch (error) {
       console.error('Error loading badges:', error);
@@ -221,21 +243,21 @@ const BadgesAchievements = ({ currentUser }) => {
     }
   };
 
-  const calculateBadges = (videos, user, studentsMentored = 0, totalCategories = 8) => {
+  const calculateBadges = (videos, user, studentsMentored = 0, totalCategories = 8, isSchoolChampion = false) => {
     const badges = [];
     const videoCount = videos.length;
     const userRole = (user.role || '').toLowerCase();
 
     // Upload milestones
-    if (videoCount >= 1) badges.push(BADGE_DEFINITIONS.firstVideo);
-    if (videoCount >= 5) badges.push(BADGE_DEFINITIONS.videoMaker5);
+    if (videoCount >= 1)  badges.push(BADGE_DEFINITIONS.firstVideo);
+    if (videoCount >= 5)  badges.push(BADGE_DEFINITIONS.videoMaker5);
     if (videoCount >= 10) badges.push(BADGE_DEFINITIONS.videoMaker10);
     if (videoCount >= 25) badges.push(BADGE_DEFINITIONS.videoMaker25);
 
-    // Quality badges — use || 0 to guard missing fields
-    if (videos.some(v => (v.aggregateScore || 0) >= 4)) badges.push(BADGE_DEFINITIONS.highRated);
-    if (videos.some(v => (v.aggregateScore || 0) >= 5)) badges.push(BADGE_DEFINITIONS.perfectScore);
-    if (videos.some(v => (v.totalEvaluations || 0) >= 50)) badges.push(BADGE_DEFINITIONS.trendingVideo);
+    // Quality badges
+    if (videos.some(v => (v.aggregateScore || 0) >= 4))      badges.push(BADGE_DEFINITIONS.highRated);
+    if (videos.some(v => (v.aggregateScore || 0) >= 5))      badges.push(BADGE_DEFINITIONS.perfectScore);
+    if (videos.some(v => (v.totalEvaluations || 0) >= 50))   badges.push(BADGE_DEFINITIONS.trendingVideo);
 
     // Category diversity
     const uniqueCategories = new Set(videos.map(v => v.category).filter(Boolean));
@@ -244,14 +266,15 @@ const BadgesAchievements = ({ currentUser }) => {
       badges.push(BADGE_DEFINITIONS.allCategories);
     }
 
-    // Teacher mentor badges — based on students they registered
-    if (userRole === 'teacher' || userRole === 'admin') {
-      if (studentsMentored >= 10) badges.push(BADGE_DEFINITIONS.mentorTeacher);
-      if (studentsMentored >= 25) badges.push(BADGE_DEFINITIONS.inspiringTeacher);
-    }
+    // School champion
+    if (isSchoolChampion) badges.push(BADGE_DEFINITIONS.schoolChampion);
 
-    // pioneer, earlyBird, teamPlayer, schoolChampion, schoolLeader are
-    // system-awarded and cannot be computed client-side; they stay locked.
+    // Teacher mentor badges (lowered thresholds: 1 / 5 / 10)
+    if (userRole === 'teacher' || userRole === 'admin') {
+      if (studentsMentored >= 1)  badges.push(BADGE_DEFINITIONS.firstStudent);
+      if (studentsMentored >= 5)  badges.push(BADGE_DEFINITIONS.mentorTeacher);
+      if (studentsMentored >= 10) badges.push(BADGE_DEFINITIONS.inspiringTeacher);
+    }
 
     return badges;
   };
@@ -269,6 +292,8 @@ const BadgesAchievements = ({ currentUser }) => {
 
   const allBadges = Object.values(BADGE_DEFINITIONS);
   const earnedBadgeIds = new Set(userBadges.map(b => b.id));
+
+  const medal = (rank) => rank === 0 ? '🥇' : rank === 1 ? '🥈' : rank === 2 ? '🥉' : `${rank + 1}.`;
 
   return (
     <div className="badges-container">
@@ -299,11 +324,7 @@ const BadgesAchievements = ({ currentUser }) => {
             onClick={() => {
               const next = !showSchoolVideos;
               setShowSchoolVideos(next);
-              if (next) {
-                setTimeout(() => {
-                  schoolVideosRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }, 100);
-              }
+              if (next) setTimeout(() => schoolVideosRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
             }}
             style={{ cursor: 'pointer', border: showSchoolVideos ? '2px solid #6366f1' : undefined }}
             title="Click to view school videos"
@@ -339,14 +360,11 @@ const BadgesAchievements = ({ currentUser }) => {
                 }}>
                   <div>
                     <div style={{ fontWeight: 600, color: '#1e293b', fontSize: '14px' }}>{video.title}</div>
-                    <div style={{ color: '#64748b', fontSize: '12px' }}>
-                      {video.uploaderName} · {video.category}
-                    </div>
+                    <div style={{ color: '#64748b', fontSize: '12px' }}>{video.uploaderName} · {video.category}</div>
                   </div>
                   <div style={{
                     background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-                    color: 'white', borderRadius: '20px', padding: '4px 10px',
-                    fontSize: '12px', fontWeight: 700
+                    color: 'white', borderRadius: '20px', padding: '4px 10px', fontSize: '12px', fontWeight: 700
                   }}>
                     ⭐ {(video.aggregateScore || 0).toFixed(1)}
                   </div>
@@ -359,24 +377,9 @@ const BadgesAchievements = ({ currentUser }) => {
 
       {/* Tabs */}
       <div className="badges-tabs">
-        <button
-          className={`tab-btn ${activeTab === 'my-badges' ? 'active' : ''}`}
-          onClick={() => setActiveTab('my-badges')}
-        >
-          My Badges
-        </button>
-        <button
-          className={`tab-btn ${activeTab === 'all-badges' ? 'active' : ''}`}
-          onClick={() => setActiveTab('all-badges')}
-        >
-          All Badges
-        </button>
-        <button
-          className={`tab-btn ${activeTab === 'leaderboard' ? 'active' : ''}`}
-          onClick={() => setActiveTab('leaderboard')}
-        >
-          Leaderboard
-        </button>
+        <button className={`tab-btn ${activeTab === 'my-badges' ? 'active' : ''}`} onClick={() => setActiveTab('my-badges')}>My Badges</button>
+        <button className={`tab-btn ${activeTab === 'all-badges' ? 'active' : ''}`} onClick={() => setActiveTab('all-badges')}>All Badges</button>
+        <button className={`tab-btn ${activeTab === 'leaderboard' ? 'active' : ''}`} onClick={() => setActiveTab('leaderboard')}>Leaderboard</button>
       </div>
 
       {/* Content */}
@@ -422,18 +425,68 @@ const BadgesAchievements = ({ currentUser }) => {
 
         {activeTab === 'leaderboard' && (
           <div className="leaderboard-section">
+
+            {/* Top Students */}
             <div className="leaderboard-card">
-              <h3>Top Schools by Videos</h3>
-              <p>Coming soon - School rankings based on total uploads and quality</p>
+              <h3>🎓 Top Students</h3>
+              {leaderboard.students.length === 0 ? (
+                <p className="leaderboard-empty">No student uploads yet.</p>
+              ) : (
+                <div className="leaderboard-list">
+                  {leaderboard.students.map((s, i) => (
+                    <div key={i} className={`leaderboard-row ${currentUser.role === 'student' && s.name === currentUser.name ? 'leaderboard-row--me' : ''}`}>
+                      <span className="leaderboard-rank">{medal(i)}</span>
+                      <div className="leaderboard-info">
+                        <span className="leaderboard-name">{s.name}</span>
+                        <span className="leaderboard-sub">{s.school}</span>
+                      </div>
+                      <span className="leaderboard-score">{s.count} video{s.count !== 1 ? 's' : ''}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
+
+            {/* Top Schools */}
             <div className="leaderboard-card">
-              <h3>Top Students</h3>
-              <p>Coming soon - Student rankings based on badges earned</p>
+              <h3>🏫 Top Schools</h3>
+              {leaderboard.schools.length === 0 ? (
+                <p className="leaderboard-empty">No school data yet.</p>
+              ) : (
+                <div className="leaderboard-list">
+                  {leaderboard.schools.map((s, i) => (
+                    <div key={i} className={`leaderboard-row ${s.name === currentUser.schoolName ? 'leaderboard-row--me' : ''}`}>
+                      <span className="leaderboard-rank">{medal(i)}</span>
+                      <div className="leaderboard-info">
+                        <span className="leaderboard-name">{s.name}</span>
+                      </div>
+                      <span className="leaderboard-score">{s.count} video{s.count !== 1 ? 's' : ''}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
+
+            {/* Top Teachers */}
             <div className="leaderboard-card">
-              <h3>Top Teachers</h3>
-              <p>Coming soon - Teacher rankings based on student mentorship</p>
+              <h3>👨‍🏫 Top Teachers</h3>
+              {leaderboard.teachers.length === 0 ? (
+                <p className="leaderboard-empty">No teacher data yet.</p>
+              ) : (
+                <div className="leaderboard-list">
+                  {leaderboard.teachers.map((t, i) => (
+                    <div key={i} className="leaderboard-row">
+                      <span className="leaderboard-rank">{medal(i)}</span>
+                      <div className="leaderboard-info">
+                        <span className="leaderboard-name">{t.name}</span>
+                      </div>
+                      <span className="leaderboard-score">{t.count} student{t.count !== 1 ? 's' : ''}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
+
           </div>
         )}
       </div>

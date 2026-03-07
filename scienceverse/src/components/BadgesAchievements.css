@@ -218,6 +218,67 @@
   font-size: 14px;
 }
 
+.leaderboard-empty {
+  color: #94a3b8;
+  font-size: 14px;
+  text-align: center;
+  padding: 16px 0;
+}
+
+.leaderboard-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.leaderboard-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  transition: background 0.15s;
+}
+
+.leaderboard-row--me {
+  background: linear-gradient(135deg, #ede9fe, #ddd6fe);
+  border-color: #a78bfa;
+}
+
+.leaderboard-rank {
+  font-size: 18px;
+  min-width: 32px;
+  font-weight: 700;
+  color: #64748b;
+}
+
+.leaderboard-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.leaderboard-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.leaderboard-sub {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.leaderboard-score {
+  font-size: 13px;
+  font-weight: 700;
+  color: #6366f1;
+  white-space: nowrap;
+}
+
 .loading-state {
   text-align: center;
   padding: 60px 20px;
