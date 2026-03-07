@@ -255,12 +255,6 @@
 
 .video-meta {
   margin-bottom: 8px;
-  background: rgba(0, 0, 0, 0.65);
-  border-radius: 10px;
-  padding: 10px 12px;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .video-title {
@@ -268,7 +262,7 @@
   font-weight: 700;
   margin-bottom: 6px;
   line-height: 1.3;
-  color: #ffffff;
+  color: #93c5fd;
   text-shadow: 0 1px 4px rgba(0, 0, 0, 1), 0 2px 8px rgba(0, 0, 0, 0.9);
 }
 
@@ -276,7 +270,7 @@
   font-size: 14px;
   line-height: 1.5;
   margin-bottom: 8px;
-  color: rgba(255, 255, 255, 0.95);
+  color: #bfdbfe;
   text-shadow: 0 1px 4px rgba(0, 0, 0, 1), 0 2px 6px rgba(0, 0, 0, 0.9);
 }
 
@@ -286,7 +280,7 @@
   gap: 4px;
   margin-bottom: 8px;
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.9);
+  color: #93c5fd;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 1);
 }
 
