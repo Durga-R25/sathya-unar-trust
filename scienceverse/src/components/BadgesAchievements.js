@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { collection, query, where, getDocs, getCountFromServer } from 'firebase/firestore';
+import { collection, query, where, getDocs, getDoc, doc, getCountFromServer } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import './BadgesAchievements.css';
 
@@ -225,19 +225,18 @@ const BadgesAchievements = ({ currentUser }) => {
         teacherStudentMap[tid].count++;
       });
 
-      // Fetch teacher names from users collection
+      // Fetch teacher names directly by UID (avoids role case-sensitivity issues)
       const teacherUids = Object.keys(teacherStudentMap);
-      if (teacherUids.length > 0) {
-        const teacherUsersSnap = await getDocs(
-          query(collection(db, 'users'), where('role', '==', 'teacher'))
-        );
-        teacherUsersSnap.docs.forEach(d => {
-          const data = d.data();
-          if (teacherStudentMap[d.id]) {
-            teacherStudentMap[d.id].name = data.name || 'Teacher';
-          }
-        });
-      }
+      await Promise.all(
+        teacherUids.map(async (uid) => {
+          try {
+            const snap = await getDoc(doc(db, 'users', uid));
+            if (snap.exists()) {
+              teacherStudentMap[uid].name = snap.data().name || 'Teacher';
+            }
+          } catch (e) { /* leave as null */ }
+        })
+      );
 
       const topTeachers = Object.values(teacherStudentMap)
         .map(t => ({ ...t, name: t.name || 'Teacher' }))
