@@ -255,6 +255,9 @@ export const activateStudentAccount = async (schoolId, activationCode, password)
         uid: user.uid,
         schoolId: schoolId.toUpperCase(),
         name: pendingData.name,
+        class: pendingData.class,
+        district: pendingData.district,
+        state: pendingData.state,
         role: 'student',
         schoolName: pendingData.schoolName
       }

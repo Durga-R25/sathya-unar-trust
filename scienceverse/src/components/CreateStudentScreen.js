@@ -28,6 +28,20 @@ const CreateStudentScreen = ({ currentUser, onClose, embedded = false }) => {
     loadSchools();
   }, []);
 
+  // Auto-populate district/state when schools load and schoolName is pre-filled
+  useEffect(() => {
+    if (formData.schoolName && schools.length > 0) {
+      const selectedSchool = schools.find(s => s.name === formData.schoolName);
+      if (selectedSchool) {
+        setFormData(prev => ({
+          ...prev,
+          district: selectedSchool.district || prev.district,
+          state: selectedSchool.state || prev.state
+        }));
+      }
+    }
+  }, [schools]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const loadSchools = async () => {
     try {
       const q = query(collection(db, 'schools'), orderBy('name'));
