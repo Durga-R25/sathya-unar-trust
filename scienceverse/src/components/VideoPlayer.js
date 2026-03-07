@@ -14,6 +14,8 @@ const VideoPlayer = ({ video, currentUser, isActive, onVideoEnd, onEvaluate, onV
   const videoRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
   const [isMuted, setIsMuted] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
@@ -49,14 +51,19 @@ const VideoPlayer = ({ video, currentUser, isActive, onVideoEnd, onEvaluate, onV
     };
   }, [isActive]);
 
-  // Update progress bar
+  // Update progress bar, current time and duration
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
 
     const handleTimeUpdate = () => {
-      const progress = (video.currentTime / video.duration) * 100;
-      setProgress(progress);
+      if (!video.duration) return;
+      setProgress((video.currentTime / video.duration) * 100);
+      setCurrentTime(video.currentTime);
+    };
+
+    const handleLoadedMetadata = () => {
+      setDuration(video.duration);
     };
 
     const handleEnded = () => {
@@ -65,10 +72,15 @@ const VideoPlayer = ({ video, currentUser, isActive, onVideoEnd, onEvaluate, onV
     };
 
     video.addEventListener('timeupdate', handleTimeUpdate);
+    video.addEventListener('loadedmetadata', handleLoadedMetadata);
     video.addEventListener('ended', handleEnded);
+
+    // If metadata already loaded (e.g. cached video)
+    if (video.duration) setDuration(video.duration);
 
     return () => {
       video.removeEventListener('timeupdate', handleTimeUpdate);
+      video.removeEventListener('loadedmetadata', handleLoadedMetadata);
       video.removeEventListener('ended', handleEnded);
     };
   }, [onVideoEnd]);
@@ -134,6 +146,21 @@ const VideoPlayer = ({ video, currentUser, isActive, onVideoEnd, onEvaluate, onV
     showToast(`${dimension}: ${score.toFixed(1)}/5.0 — ${description}`);
   };
 
+  const formatTime = (secs) => {
+    if (!secs || isNaN(secs)) return '0:00';
+    const m = Math.floor(secs / 60);
+    const s = Math.floor(secs % 60);
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  };
+
+  const handleSeek = (e) => {
+    const value = parseFloat(e.target.value);
+    if (videoRef.current && videoRef.current.duration) {
+      videoRef.current.currentTime = (value / 100) * videoRef.current.duration;
+      setProgress(value);
+    }
+  };
+
   return (
     <div className="video-player">
       {/* Video Element */}
@@ -154,9 +181,25 @@ const VideoPlayer = ({ video, currentUser, isActive, onVideoEnd, onEvaluate, onV
         </div>
       )}
 
-      {/* Progress Bar */}
-      <div className="progress-bar">
-        <div className="progress-fill" style={{ width: `${progress}%` }} />
+      {/* Seek / Progress Controls */}
+      <div className="video-controls">
+        <button className="control-play-btn" onClick={togglePlayPause}>
+          {isPlaying ? '⏸' : '▶'}
+        </button>
+        <span className="control-time">{formatTime(currentTime)}</span>
+        <input
+          type="range"
+          className="seek-bar"
+          min="0"
+          max="100"
+          step="0.1"
+          value={progress}
+          onChange={handleSeek}
+          style={{
+            background: `linear-gradient(to right, #6366f1 ${progress}%, rgba(255,255,255,0.3) ${progress}%)`
+          }}
+        />
+        <span className="control-time">{formatTime(duration)}</span>
       </div>
 
       {/* Right Side Actions */}

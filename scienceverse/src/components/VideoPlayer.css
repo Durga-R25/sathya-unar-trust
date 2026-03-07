@@ -43,20 +43,101 @@
   transform: scale(0.9);
 }
 
-.progress-bar {
+/* ── Video controls bar (seek + play/pause + time) ── */
+.video-controls {
   position: absolute;
-  bottom: 80px;
+  bottom: 88px;
   left: 0;
-  width: 100%;
-  height: 3px;
-  background-color: rgba(255, 255, 255, 0.3);
-  z-index: 20;
+  right: 70px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 14px;
+  z-index: 30;
 }
 
-.progress-fill {
-  height: 100%;
-  background-color: #6366f1;
-  transition: width 0.1s linear;
+.control-play-btn {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  color: #fff;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+}
+
+.control-play-btn:active {
+  transform: scale(0.9);
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.control-time {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+  min-width: 34px;
+  text-align: center;
+  letter-spacing: 0.3px;
+}
+
+/* Seek bar — range input styled as a slim track */
+.seek-bar {
+  flex: 1;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.3);
+  outline: none;
+  cursor: pointer;
+  position: relative;
+}
+
+/* Filled portion via background gradient updated by JS progress value */
+.seek-bar::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+
+.seek-bar:active::-webkit-slider-thumb {
+  transform: scale(1.3);
+}
+
+.seek-bar::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  border: none;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+}
+
+.seek-bar::-webkit-slider-runnable-track {
+  border-radius: 2px;
+}
+
+.seek-bar::-moz-range-track {
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.3);
 }
 
 .video-actions {
@@ -148,7 +229,7 @@
   bottom: 0;
   left: 0;
   right: 70px;
-  padding: 16px;
+  padding: 16px 16px 130px;
   /* Stronger gradient so text is always readable over any video frame */
   background: linear-gradient(
     to top,
@@ -308,6 +389,32 @@
 
   .video-meta {
     padding: 8px 10px;
+  }
+
+  .video-controls {
+    bottom: 82px;
+    padding: 0 10px;
+    gap: 6px;
+  }
+
+  .control-play-btn {
+    width: 30px;
+    height: 30px;
+    font-size: 12px;
+  }
+
+  .control-time {
+    font-size: 10px;
+    min-width: 28px;
+  }
+
+  .seek-bar::-webkit-slider-thumb {
+    width: 16px;
+    height: 16px;
+  }
+
+  .video-bottom {
+    padding-bottom: 120px;
   }
 
   /* Compact action buttons so all fit on screen without overflowing */
