@@ -57,11 +57,9 @@ const VideoApproval = ({ currentUser }) => {
 
       setPendingVideos(videos);
 
-      const mySchoolCount = isTeacher ? videos.length : 0;
-
       setStats({
-        total: videos.length,
-        mySchool: mySchoolCount
+        total: allVideos.length,
+        mySchool: isTeacher ? videos.length : 0
       });
     } catch (error) {
       console.error('Error loading pending videos:', error);
