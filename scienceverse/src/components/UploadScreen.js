@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { collection, query, where, getDocs, addDoc, serverTimestamp } from 'firebase/firestore';
+import { createNotification, checkAndNotifyUploadBadges } from '../services/notificationService';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../config/firebase';
 import VideoRecorder from './VideoRecorder';
@@ -252,6 +253,28 @@ const UploadScreen = ({ currentUser, onClose, onUploadComplete }) => {
           };
 
           await addDoc(collection(db, 'videos'), videoData);
+
+          // Notify the student that their video was submitted
+          const studentId = uploaderInfo.uploaderId;
+          await createNotification(studentId, {
+            title: 'Video Submitted!',
+            message: `Your video "${metadata.title}" has been submitted for review.`,
+            icon: '📤',
+            type: 'upload'
+          });
+
+          // Check if this upload unlocks a badge
+          await checkAndNotifyUploadBadges(studentId);
+
+          // Notify the teacher who created this student (if student uploaded themselves)
+          if (!isTeacher && currentUser.createdBy) {
+            await createNotification(currentUser.createdBy, {
+              title: 'New Video Pending Review',
+              message: `${currentUser.name} submitted "${metadata.title}" for review.`,
+              icon: '📹',
+              type: 'pending_video'
+            });
+          }
 
           setUploadStep('complete');
 

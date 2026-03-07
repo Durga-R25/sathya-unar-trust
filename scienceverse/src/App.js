@@ -407,8 +407,8 @@ const AppContent = () => {
 
   const handleUploadComplete = (uploadData) => {
     console.log('Upload complete:', uploadData);
-    // Reload videos to show the newly uploaded one (if approved)
     loadVideos();
+    loadNotifications();
     showToast('Video uploaded successfully!');
   };
 

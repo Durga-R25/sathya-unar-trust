@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { collection, query, where, getDocs, doc, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
+import { createNotification } from '../services/notificationService';
 import { db } from '../config/firebase';
 import './VideoApproval.css';
 
@@ -82,6 +83,13 @@ const VideoApproval = ({ currentUser }) => {
         approvedAt: serverTimestamp()
       });
 
+      await createNotification(video.uploaderId, {
+        title: 'Video Approved!',
+        message: `Your video "${video.title}" has been approved and is now live!`,
+        icon: '✅',
+        type: 'approval'
+      });
+
       setPendingVideos(pendingVideos.filter(v => v.id !== video.id));
       alert('Video approved successfully!');
     } catch (error) {
@@ -104,6 +112,13 @@ const VideoApproval = ({ currentUser }) => {
         rejectedBy: currentUser.uid,
         rejectedAt: serverTimestamp(),
         rejectionReason: reason
+      });
+
+      await createNotification(video.uploaderId, {
+        title: 'Video Not Approved',
+        message: `Your video "${video.title}" was not approved. Reason: ${reason}`,
+        icon: '❌',
+        type: 'rejection'
       });
 
       setPendingVideos(pendingVideos.filter(v => v.id !== video.id));
