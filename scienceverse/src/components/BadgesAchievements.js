@@ -225,10 +225,9 @@ const BadgesAchievements = ({ currentUser }) => {
         teacherStudentMap[tid].count++;
       });
 
-      // Fetch teacher names using a list query (get is blocked for other users by rules)
+      // Fetch user docs by UID using list query (get on other users is blocked by rules)
       const teacherUids = Object.keys(teacherStudentMap);
       if (teacherUids.length > 0) {
-        // Firestore 'in' supports up to 30 items per query
         const chunks = [];
         for (let i = 0; i < teacherUids.length; i += 30) {
           chunks.push(teacherUids.slice(i, i + 30));
@@ -238,15 +237,19 @@ const BadgesAchievements = ({ currentUser }) => {
             query(collection(db, 'users'), where(documentId(), 'in', chunk))
           );
           snap.docs.forEach(d => {
-            if (teacherStudentMap[d.id]) {
-              teacherStudentMap[d.id].name = d.data().name || 'Teacher';
+            const data = d.data();
+            const role = (data.role || '').toLowerCase();
+            if (teacherStudentMap[d.id] && role === 'teacher') {
+              // Only mark as valid teacher (exclude admins/others)
+              teacherStudentMap[d.id].name = data.name || null;
             }
           });
         }));
       }
 
+      // Only include entries where we confirmed a teacher name (filters out admins)
       const topTeachers = Object.values(teacherStudentMap)
-        .map(t => ({ ...t, name: t.name || 'Teacher' }))
+        .filter(t => t.name !== null)
         .sort((a, b) => b.count - a.count)
         .slice(0, 10);
 
