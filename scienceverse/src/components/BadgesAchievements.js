@@ -220,11 +220,27 @@ const BadgesAchievements = ({ currentUser }) => {
         const tid = data.createdBy;
         if (!tid) return;
         if (!teacherStudentMap[tid]) {
-          teacherStudentMap[tid] = { name: data.createdByName || 'Teacher', count: 0 };
+          teacherStudentMap[tid] = { uid: tid, name: null, count: 0 };
         }
         teacherStudentMap[tid].count++;
       });
+
+      // Fetch teacher names from users collection
+      const teacherUids = Object.keys(teacherStudentMap);
+      if (teacherUids.length > 0) {
+        const teacherUsersSnap = await getDocs(
+          query(collection(db, 'users'), where('role', '==', 'teacher'))
+        );
+        teacherUsersSnap.docs.forEach(d => {
+          const data = d.data();
+          if (teacherStudentMap[d.id]) {
+            teacherStudentMap[d.id].name = data.name || 'Teacher';
+          }
+        });
+      }
+
       const topTeachers = Object.values(teacherStudentMap)
+        .map(t => ({ ...t, name: t.name || 'Teacher' }))
         .sort((a, b) => b.count - a.count)
         .slice(0, 10);
 
