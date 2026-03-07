@@ -49,17 +49,27 @@ const VideoApproval = ({ currentUser }) => {
       }));
 
       // Filter by school in memory for teachers (case-insensitive, trimmed)
+      const schoolName = currentUser.schoolName?.toLowerCase().trim();
       const videos = isTeacher
-        ? allVideos.filter(v =>
-            v.uploaderSchool?.toLowerCase().trim() === currentUser.schoolName?.toLowerCase().trim()
-          )
+        ? allVideos.filter(v => v.uploaderSchool?.toLowerCase().trim() === schoolName)
         : allVideos;
 
       setPendingVideos(videos);
 
+      // For teachers: count approved videos from their school
+      let approvedFromMySchool = 0;
+      if (isTeacher && schoolName) {
+        const approvedSnap = await getDocs(
+          query(collection(db, 'videos'), where('status', '==', 'active'))
+        );
+        approvedFromMySchool = approvedSnap.docs.filter(
+          d => d.data().uploaderSchool?.toLowerCase().trim() === schoolName
+        ).length;
+      }
+
       setStats({
-        total: allVideos.length,
-        mySchool: isTeacher ? videos.length : 0
+        total: isTeacher ? videos.length : allVideos.length,
+        mySchool: isTeacher ? approvedFromMySchool : 0
       });
     } catch (error) {
       console.error('Error loading pending videos:', error);
@@ -189,7 +199,7 @@ const VideoApproval = ({ currentUser }) => {
         {isTeacher && (
           <div className="stat-card highlight">
             <div className="stat-value">{stats.mySchool}</div>
-            <div className="stat-label">From My School</div>
+            <div className="stat-label">Approved from My School</div>
           </div>
         )}
       </div>
