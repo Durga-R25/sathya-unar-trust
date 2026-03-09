@@ -1,0 +1,171 @@
+.leaderboard {
+  background-color: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 24px;
+}
+
+.leaderboard-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #f1f5f9;
+  margin-bottom: 20px;
+}
+
+.leaderboard-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.leaderboard-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  transition: all 0.2s;
+}
+
+.leaderboard-item:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+  border-color: rgba(99, 102, 241, 0.3);
+}
+
+.leaderboard-item.rank-1 {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(255, 215, 0, 0.05) 100%);
+  border-color: rgba(255, 215, 0, 0.3);
+}
+
+.leaderboard-item.rank-2 {
+  background: linear-gradient(135deg, rgba(192, 192, 192, 0.1) 0%, rgba(192, 192, 192, 0.05) 100%);
+  border-color: rgba(192, 192, 192, 0.3);
+}
+
+.leaderboard-item.rank-3 {
+  background: linear-gradient(135deg, rgba(205, 127, 50, 0.1) 0%, rgba(205, 127, 50, 0.05) 100%);
+  border-color: rgba(205, 127, 50, 0.3);
+}
+
+.rank-badge {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rank-number {
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.item-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.item-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #f1f5f9;
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.item-subtitle {
+  font-size: 13px;
+  color: #94a3b8;
+  margin-bottom: 8px;
+}
+
+.item-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.stat {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.stat-label {
+  color: #64748b;
+}
+
+.stat-value {
+  color: #cbd5e1;
+  font-weight: 600;
+}
+
+.score-display {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 16px;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  border-radius: 12px;
+}
+
+.score-number {
+  font-size: 24px;
+  font-weight: 700;
+  color: white;
+}
+
+.score-label {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 600;
+}
+
+.leaderboard-empty {
+  padding: 60px 20px;
+  text-align: center;
+  color: #64748b;
+  font-size: 14px;
+}
+
+@media (max-width: 768px) {
+  .leaderboard {
+    padding: 16px;
+  }
+
+  .leaderboard-title {
+    font-size: 18px;
+  }
+
+  .leaderboard-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .rank-badge {
+    width: 40px;
+    height: 40px;
+  }
+
+  .rank-number {
+    font-size: 20px;
+  }
+
+  .item-stats {
+    gap: 12px;
+  }
+
+  .score-display {
+    align-self: flex-end;
+  }
+}

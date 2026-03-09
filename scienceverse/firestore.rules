@@ -1,0 +1,285 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ========================================================================
+    // HELPER FUNCTIONS
+    // ========================================================================
+
+    // Check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Get user data from Firestore
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    // Check user role (case-insensitive)
+    function hasRole(role) {
+      let userRole = getUserData().role;
+      return isAuthenticated() && (userRole == role || userRole == role.upper());
+    }
+
+    // Check if user is admin (case-insensitive)
+    function isAdmin() {
+      let userRole = getUserData().role;
+      return isAuthenticated() && (userRole == 'admin' || userRole == 'Admin' || userRole == 'ADMIN');
+    }
+
+    // Check if user is teacher (case-insensitive)
+    function isTeacher() {
+      let userRole = getUserData().role;
+      return isAuthenticated() && (userRole == 'teacher' || userRole == 'Teacher' || userRole == 'TEACHER');
+    }
+
+    // Check if user is judge (case-insensitive)
+    function isJudge() {
+      let userRole = getUserData().role;
+      return isAuthenticated() && (userRole == 'judge' || userRole == 'Judge' || userRole == 'JUDGE');
+    }
+
+    // Check if user is student (case-insensitive)
+    function isStudent() {
+      let userRole = getUserData().role;
+      return isAuthenticated() && (userRole == 'student' || userRole == 'Student' || userRole == 'STUDENT');
+    }
+
+    // Check if user owns the resource
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // ========================================================================
+    // USERS COLLECTION
+    // ========================================================================
+    match /users/{userId} {
+      // Read permissions:
+      // - Users can read their own document
+      // - Teachers and admins can list/query users (for duplicate checking)
+      allow get: if isAuthenticated() && request.auth.uid == userId;
+      allow list: if isAuthenticated();
+
+      // Only admins can create user documents (except students via activation)
+      allow create: if isAdmin() || (
+        isAuthenticated() &&
+        request.resource.data.role == 'student' &&
+        request.resource.data.uid == request.auth.uid
+      );
+
+      // Users can update their own profile (limited fields)
+      // Admins can update any profile
+      // Teachers can update students they created
+      allow update: if isOwner(userId) && (
+        // Users can only update these fields
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['name', 'profilePicture', 'bio'])
+      ) || isAdmin() || (
+        // Teachers can update students they created
+        isTeacher() &&
+        resource.data.role == 'student' &&
+        resource.data.createdBy == request.auth.uid
+      );
+
+      // Admins can delete any user
+      // Teachers can delete students they created
+      allow delete: if isAdmin() || (
+        isTeacher() &&
+        resource.data.role == 'student' &&
+        resource.data.createdBy == request.auth.uid
+      );
+    }
+
+    // ========================================================================
+    // PENDING ACTIVATIONS COLLECTION
+    // ========================================================================
+    match /pendingActivations/{activationId} {
+      // Teachers, admins, and anyone (for activation lookup) can read
+      // Students need to read during activation before they're authenticated
+      allow read: if true;
+
+      // Only teachers and admins can create pending activations
+      allow create: if isAuthenticated() && (isTeacher() || isAdmin()) &&
+        request.resource.data.role == 'student';
+
+      // Anyone can update to mark as activated (during student activation)
+      // Admins can also update
+      allow update: if isAdmin() || (
+        resource.data.activated == false &&
+        request.resource.data.activated == true
+      );
+
+      // Admins can delete any pending activation
+      // Teachers can delete pending activations they created
+      allow delete: if isAdmin() || (
+        isTeacher() &&
+        resource.data.teacherId == request.auth.uid
+      );
+    }
+
+    // ========================================================================
+    // VIDEOS COLLECTION (Phase B.1 - Students and Teachers can upload)
+    // ========================================================================
+    match /videos/{videoId} {
+      // Anyone authenticated can read videos
+      allow read: if isAuthenticated();
+
+      // Students and teachers can create videos
+      allow create: if isAuthenticated() && (
+        // Students can upload their own videos
+        (isStudent() && request.resource.data.uploaderId == request.auth.uid) ||
+        // Teachers can upload videos for students
+        isTeacher() ||
+        // Admins can upload
+        isAdmin()
+      );
+
+      // Video owner, admin, or teacher from same school can update
+      // Teachers can only update status, approvedBy, approvedAt fields for approval
+      // Any authenticated user can update aggregate score fields after evaluation
+      allow update: if isOwner(resource.data.uploaderId) || isAdmin() || (
+        isTeacher() &&
+        resource.data.uploaderSchool == getUserData().schoolName &&
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['status', 'approvedBy', 'approvedAt', 'rejectedBy', 'rejectedAt', 'rejectionReason'])
+      ) || (
+        isAuthenticated() &&
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['totalEvaluations', 'judgeEvaluations', 'teacherEvaluations', 'studentEvaluations', 'aggregateScore', 'scientificClarity', 'humanityCare', 'realLifeImpact', 'originalThinking', 'views'])
+      );
+
+      // Only video owner or admin can delete
+      allow delete: if isOwner(resource.data.uploaderId) || isAdmin();
+    }
+
+    // ========================================================================
+    // EVALUATIONS COLLECTION (Phase B.2, B.4)
+    // ========================================================================
+    match /evaluations/{evaluationId} {
+      // Anyone authenticated can read evaluations
+      allow read: if isAuthenticated();
+
+      // Any authenticated user can submit an evaluation for their own evaluatorId.
+      // Role-based restrictions (own video, own school) are enforced in app code.
+      allow create: if isAuthenticated() &&
+        request.resource.data.evaluatorId == request.auth.uid;
+
+      // Only evaluation creator or admin can update
+      allow update: if isOwner(resource.data.evaluatorId) || isAdmin();
+
+      // Only evaluation creator or admin can delete
+      allow delete: if isOwner(resource.data.evaluatorId) || isAdmin();
+    }
+
+    // ========================================================================
+    // JUDGE ASSIGNMENTS COLLECTION (Phase B.3)
+    // ========================================================================
+    match /judgeAssignments/{assignmentId} {
+      // Judges can read their own assignments
+      // Admins can read all assignments
+      allow read: if isAuthenticated() && (
+        isJudge() && resource.data.judgeUid == request.auth.uid ||
+        isAdmin()
+      );
+
+      // Only admins can create, update, delete assignments
+      allow create, update, delete: if isAdmin();
+    }
+
+    // ========================================================================
+    // COMPETITION SETTINGS COLLECTION
+    // ========================================================================
+
+    // systemUpdate: any authenticated user can write (bundle hash + forceLogoutAt signal)
+    match /settings/systemUpdate {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() &&
+        request.resource.data.keys().hasOnly(['bundleHash', 'forceLogoutAt', 'message']);
+    }
+
+    match /settings/{settingId} {
+      // Anyone authenticated can read settings
+      allow read: if isAuthenticated();
+
+      // Only admins can update settings (Phase B.5)
+      allow create, update, delete: if isAdmin();
+    }
+
+    // ========================================================================
+    // CATEGORIES COLLECTION
+    // ========================================================================
+    match /categories/{categoryId} {
+      // Anyone authenticated can read categories
+      allow read: if isAuthenticated();
+
+      // Only admins can manage categories (Phase B.5)
+      allow create, update, delete: if isAdmin();
+    }
+
+    // ========================================================================
+    // SCHOOLS COLLECTION
+    // ========================================================================
+    match /schools/{schoolId} {
+      // Anyone authenticated can read school data
+      allow read: if isAuthenticated();
+
+      // Only admins can create/update schools
+      allow create, update: if isAdmin();
+
+      // Only admins can delete schools
+      allow delete: if isAdmin();
+    }
+
+    // ========================================================================
+    // LEADERBOARDS COLLECTION (Read-only, updated by Cloud Functions)
+    // ========================================================================
+    match /leaderboards/{leaderboardId} {
+      // Anyone authenticated can read leaderboards
+      allow read: if isAuthenticated();
+
+      // Only Cloud Functions can write (no client writes)
+      allow write: if false;
+    }
+
+    // ========================================================================
+    // ANALYTICS COLLECTION (Admin only - Phase B.5)
+    // ========================================================================
+    match /analytics/{analyticId} {
+      // Only admins can read analytics
+      allow read: if isAdmin();
+
+      // Only Cloud Functions can write analytics
+      allow write: if false;
+    }
+
+    // ========================================================================
+    // NOTIFICATIONS COLLECTION
+    // ========================================================================
+    match /notifications/{notificationId} {
+      // Users can read their own notifications
+      allow read: if isAuthenticated() &&
+        resource.data.userId == request.auth.uid;
+
+      // System and admins can create notifications
+      allow create: if isAdmin();
+
+      // Users can update their own notifications (mark as read)
+      allow update: if isAuthenticated() &&
+        resource.data.userId == request.auth.uid &&
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['read', 'readAt']);
+
+      // Users can delete their own notifications
+      allow delete: if isAuthenticated() &&
+        resource.data.userId == request.auth.uid;
+    }
+
+    // ========================================================================
+    // DEFAULT DENY ALL OTHER COLLECTIONS
+    // ========================================================================
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

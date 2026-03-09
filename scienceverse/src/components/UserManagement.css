@@ -1,0 +1,233 @@
+.user-management {
+  padding: 20px;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.user-management h3 {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 24px;
+}
+
+/* Title Header Tab */
+.section-title-box {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  border-radius: 12px;
+  padding: 18px 24px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.section-title-box h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: white;
+  margin: 0;
+}
+
+.section-title-icon {
+  font-size: 26px;
+  filter: brightness(1.2);
+}
+
+.role-selector {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.role-button {
+  flex: 1;
+  padding: 16px;
+  background: #f8fafc;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.role-button:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.role-button.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-color: #667eea;
+  color: white;
+}
+
+.user-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.user-management .form-label,
+.user-form .form-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: white !important;
+}
+
+.form-input {
+  padding: 14px 16px;
+  background-color: #f8fafc;
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 15px;
+  color: #1e293b;
+  transition: all 0.2s;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: #667eea;
+  background-color: white;
+}
+
+.form-input::placeholder {
+  color: #94a3b8;
+}
+
+.form-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.submit-button {
+  padding: 14px 24px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 8px;
+}
+
+.submit-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+}
+
+.submit-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Success Card Styling */
+.success-card {
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  border: 2px solid #86efac;
+  border-radius: 16px;
+  padding: 32px;
+  text-align: center;
+  box-shadow: 0 4px 20px rgba(34, 197, 94, 0.2);
+}
+
+.success-icon {
+  font-size: 64px;
+  margin-bottom: 16px;
+}
+
+.success-card h3 {
+  color: #166534;
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 24px;
+}
+
+.success-details {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+  text-align: left;
+}
+
+.detail-row {
+  display: flex;
+  padding: 12px 0;
+  border-bottom: 1px solid #e2e8f0;
+  color: #1e293b;
+}
+
+.detail-row:last-child {
+  border-bottom: none;
+}
+
+.detail-row strong {
+  min-width: 100px;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.instructions {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 12px;
+  padding: 20px;
+  text-align: left;
+  margin-bottom: 24px;
+}
+
+.instructions p {
+  color: #1e40af;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.instructions ol {
+  color: #1e293b;
+  margin-left: 20px;
+  line-height: 1.8;
+}
+
+.instructions li {
+  margin-bottom: 8px;
+}
+
+.primary-button {
+  padding: 14px 32px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.primary-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+}
+
+@media (max-width: 768px) {
+  .role-selector {
+    flex-direction: column;
+  }
+}

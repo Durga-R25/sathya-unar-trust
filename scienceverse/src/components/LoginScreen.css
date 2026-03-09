@@ -1,0 +1,413 @@
+.login-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  padding: 20px;
+}
+
+/* Organization Logos */
+.org-logos {
+  position: fixed;
+  top: 20px;
+  left: 0;
+  right: 0;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 0 20px;
+  z-index: 10001;
+  pointer-events: none;
+}
+
+.org-logo {
+  height: 80px;
+  width: 80px;
+  object-fit: cover;
+  background: white;
+  border-radius: 50%;
+  padding: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  pointer-events: auto;
+  border: 2px solid rgba(255, 255, 255, 0.9);
+}
+
+.org-logo-left {
+  /* Circular logo - no max-width needed */
+}
+
+.org-logo-right {
+  /* Circular logo - no max-width needed */
+}
+
+@media (max-width: 768px) {
+  .login-screen {
+    justify-content: flex-start;
+    padding: 16px;
+    padding-top: 40px;
+  }
+
+  .org-logos {
+    top: 12px;
+    padding: 0 12px;
+  }
+
+  .org-logo {
+    height: 60px;
+    width: 60px;
+  }
+
+  .org-logo-left {
+    /* Circular logo - no max-width needed */
+  }
+
+  .org-logo-right {
+    /* Circular logo - no max-width needed */
+  }
+}
+
+.login-container {
+  width: 100%;
+  max-width: 440px;
+  background-color: rgba(255, 255, 255, 0.95);
+  border-radius: 24px;
+  padding: 40px 32px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.login-header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.login-title {
+  font-size: 32px;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.logo-icon {
+  font-size: 36px;
+  display: inline-block;
+}
+
+@media (max-width: 768px) {
+  .login-title {
+    font-size: 24px;
+  }
+
+  .logo-icon {
+    font-size: 28px;
+  }
+}
+
+.login-subtitle {
+  font-size: 14px;
+  color: #64748b;
+  line-height: 1.5;
+}
+
+/* Role Selection */
+.role-selection {
+  margin-bottom: 32px;
+}
+
+.role-selection-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: #334155;
+  margin-bottom: 12px;
+}
+
+.role-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.role-card {
+  padding: 20px 16px;
+  background-color: #f8fafc;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.role-card:hover {
+  background-color: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.role-card.selected {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-color: #667eea;
+  color: white;
+  transform: scale(1.05);
+  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+  position: relative;
+}
+
+.role-card.selected::after {
+  content: '✓';
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background-color: rgba(255, 255, 255, 0.3);
+  color: white;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.role-card-icon {
+  font-size: 32px;
+  margin-bottom: 8px;
+}
+
+.role-card-name {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.role-card.selected .role-card-name {
+  color: white;
+}
+
+/* Login Form */
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.selected-role-banner {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border: 2px solid #bae6fd;
+  border-radius: 12px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.banner-icon {
+  font-size: 24px;
+}
+
+.banner-text {
+  font-size: 14px;
+  color: #0c4a6e;
+  font-weight: 500;
+}
+
+.banner-text strong {
+  font-weight: 700;
+  color: #075985;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.form-input {
+  padding: 14px 16px;
+  background-color: #f8fafc;
+  border: 2px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 15px;
+  color: #1e293b;
+  transition: all 0.2s;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: #667eea;
+  background-color: white;
+}
+
+.form-input::placeholder {
+  color: #94a3b8;
+}
+
+.form-hint {
+  font-size: 12px;
+  color: #64748b;
+  margin-top: -4px;
+}
+
+.password-toggle {
+  position: relative;
+}
+
+.password-toggle-btn {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.forgot-password {
+  font-size: 13px;
+  color: #667eea;
+  text-decoration: none;
+  font-weight: 600;
+  align-self: flex-end;
+  margin-top: -8px;
+}
+
+.forgot-password:hover {
+  text-decoration: underline;
+}
+
+.login-button {
+  padding: 16px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 8px;
+}
+
+.login-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+}
+
+.login-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Error Message */
+.error-message {
+  padding: 12px 16px;
+  background-color: #fee2e2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  color: #dc2626;
+  font-size: 14px;
+  text-align: center;
+  animation: shake 0.3s;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-8px); }
+  75% { transform: translateX(8px); }
+}
+
+/* Register Link */
+.register-link {
+  text-align: center;
+  font-size: 14px;
+  color: #64748b;
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.register-link a {
+  color: #667eea;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.register-link a:hover {
+  text-decoration: underline;
+}
+
+.link-button {
+  background: none;
+  border: none;
+  color: #667eea;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  padding: 0;
+  font-size: inherit;
+  font-family: inherit;
+}
+
+.link-button:hover {
+  text-decoration: underline;
+}
+
+/* School ID Info */
+.school-id-info {
+  background-color: #f0f9ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  padding: 12px;
+  margin-top: 8px;
+}
+
+.school-id-info-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #1e40af;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.school-id-info-text {
+  font-size: 11px;
+  color: #3730a3;
+  line-height: 1.4;
+}
+
+/* Responsive */
+  @media (max-width: 768px) {
+    .login-container {
+      padding: 32px 24px;
+    }
+
+    .role-cards {
+      grid-template-columns: 1fr;
+    }
+  }

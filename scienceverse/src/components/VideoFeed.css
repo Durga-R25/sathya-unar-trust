@@ -1,0 +1,138 @@
+.video-feed {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  position: relative;
+  background-color: #000;
+}
+
+.video-container {
+  width: 100%;
+  height: 100%;
+  will-change: transform;
+}
+
+.video-slide {
+  width: 100vw;
+  height: 100vh;
+  position: relative;
+}
+
+.video-counter {
+  position: fixed;
+  top: 50px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(0, 0, 0, 0.6);
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  color: white;
+  z-index: 50;
+  backdrop-filter: blur(8px);
+}
+
+.swipe-indicator {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 12px;
+  z-index: 40;
+  animation: bounce 2s infinite;
+  pointer-events: none;
+}
+
+.swipe-up {
+  bottom: 100px;
+}
+
+.swipe-down {
+  top: 100px;
+}
+
+.swipe-indicator .arrow {
+  font-size: 24px;
+  margin-bottom: 4px;
+}
+
+.swipe-indicator .text {
+  font-weight: 500;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateX(-50%) translateY(0);
+  }
+  50% {
+    transform: translateX(-50%) translateY(-10px);
+  }
+}
+
+.swipe-up {
+  animation-name: bounceUp;
+}
+
+@keyframes bounceUp {
+  0%, 100% {
+    transform: translateX(-50%) translateY(0);
+  }
+  50% {
+    transform: translateX(-50%) translateY(10px);
+  }
+}
+
+/* Hide indicators after first swipe */
+.video-feed.swiped .swipe-indicator {
+  display: none;
+}
+
+/* Performance optimizations */
+.video-container {
+  -webkit-overflow-scrolling: touch;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+  .video-counter {
+    top: 40px;
+    font-size: 12px;
+    padding: 5px 14px;
+  }
+
+  .swipe-indicator .arrow {
+    font-size: 20px;
+  }
+
+  .swipe-indicator .text {
+    font-size: 11px;
+  }
+}
+
+  /* Simple swipe helper text */
+  .swipe-helper {
+    position: fixed;
+    bottom: 100px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 12px;
+    z-index: 50;
+    pointer-events: none;
+  }
+
+  @media (min-width: 769px) {
+    .swipe-helper {
+      display: none;
+    }
+  }
