@@ -1,0 +1,131 @@
+{
+  "class": "8",
+  "subject": "Tamil",
+  "school": "Government Higher Secondary School - Pilot",
+  "academic_year": "2025-26",
+  "playlists": {
+    "tamil": {
+      "term_1": "PL-mvKYotpGsL70WJ27Uu0zLtxbv_2cJ54",
+      "term_2": "PL-mvKYotpGsIky5YS1Jcu2uF7n9nJbISd"
+    },
+    "maths": {
+      "term_1": "PL-mvKYotpGsLi8wEXrwoRgmeSMUaQghtf",
+      "term_2": "PL-mvKYotpGsJc8zh8S6m4hgdZOQGjJ3Fx"
+    },
+    "science": {
+      "term_1": "PL-mvKYotpGsIA9elKaBiSAW-TZZrSVreU",
+      "term_2": "PL-mvKYotpGsJhVR7QXkvO-zAeTwYphtXC"
+    },
+    "social_science": {
+      "term_1": "PL-mvKYotpGsLpISmgBaPw6_iNaHZASuNn",
+      "term_2": "PL-mvKYotpGsKgGbkq4SMz8eZGuWgVeUOM"
+    },
+    "english": {
+      "term_1": "PL-mvKYotpGsLRdVKirMOzcPZdUtlXjS6P"
+    },
+    "bridge_course": {
+      "term_1": "PL-mvKYotpGsLQ_ZkuhMMVwv-M6zXlpycE"
+    }
+  },
+  "lessons": [
+    {
+      "id": "c8-u1-l1",
+      "unit": "Unit 1",
+      "unit_name": "உரைநடை",
+      "title": "காடும் காட்டு உயிரினங்களும்",
+      "kalvitv_search_query": "8th tamil unit 1 kalvitv காடும் காட்டு உயிரினங்களும்",
+      "youtube_id": "FIND_FROM_KALVITV",
+      "duration_minutes": 15,
+      "checkpoints": [
+        { "at_minute": 5, "focus": "காட்டின் முக்கியத்துவம்" },
+        { "at_minute": 10, "focus": "உயிரினங்களின் வாழ்விடம்" }
+      ],
+      "learning_outcomes": [
+        "காட்டின் சுற்றுச்சூழல் பங்கை புரிந்துகொள்ளுதல்",
+        "உயிரினங்களின் உணவுச் சங்கிலியை அறிதல்",
+        "மனிதனும் இயற்கையும் உறவை உணர்தல்"
+      ],
+      "competencies": ["reading_comprehension", "inference", "environmental_awareness"],
+      "nep_skills": ["critical_thinking", "experiential_learning"],
+      "language_skills": ["reading", "comprehension", "vocabulary"],
+      "lesson_summary": "இந்த பாடம் காடுகளின் முக்கியத்துவத்தையும், காட்டு உயிரினங்களின் வாழ்க்கையையும் பற்றி விவரிக்கிறது. மனிதனின் செயல்பாடுகள் காடுகளை எவ்வாறு பாதிக்கின்றன என்பதையும் ஆராய்கிறது.",
+      "key_vocabulary": ["வனம்", "உயிரினம்", "உணவுச்சங்கிலி", "சுற்றுச்சூழல்", "பாதுகாப்பு"],
+      "opening_question": "உன் ஊரில் அல்லது அருகில் காடு இருக்கிறதா? அந்த காட்டில் என்ன இருக்கும் என்று நினைக்கிறாய்?",
+      "assessment_type": "oral_reflection"
+    },
+    {
+      "id": "c8-u1-l2",
+      "unit": "Unit 1",
+      "unit_name": "உரைநடை",
+      "title": "தமிழர் விளையாட்டுகள்",
+      "kalvitv_search_query": "8th tamil unit 1 kalvitv தமிழர் விளையாட்டுகள்",
+      "youtube_id": "FIND_FROM_KALVITV",
+      "duration_minutes": 12,
+      "checkpoints": [
+        { "at_minute": 4, "focus": "பாரம்பரிய விளையாட்டுகளின் வகைகள்" },
+        { "at_minute": 8, "focus": "விளையாட்டுகளின் நன்மைகள்" }
+      ],
+      "learning_outcomes": [
+        "தமிழர் பாரம்பரிய விளையாட்டுகளை அறிதல்",
+        "உடல் மற்றும் மன வளர்ச்சியில் விளையாட்டின் பங்கை புரிதல்"
+      ],
+      "competencies": ["reading_comprehension", "cultural_awareness", "vocabulary"],
+      "nep_skills": ["joyful_learning", "inquiry_based"],
+      "language_skills": ["reading", "comprehension"],
+      "lesson_summary": "தமிழர்களின் பாரம்பரிய விளையாட்டுகளான கிளிவிளையாட்டு, பம்பரம், கோலி போன்றவற்றின் வரலாறும் முக்கியத்துவமும் விவரிக்கப்படுகிறது.",
+      "key_vocabulary": ["பாரம்பரியம்", "விளையாட்டு", "கலாச்சாரம்", "சிற்றின்பம்", "திறமை"],
+      "opening_question": "நீ சிறுவயதில் அல்லது இப்போது என்ன விளையாட்டு விளையாடுகிறாய்? உன் விளையாட்டு எப்படி இருக்கும்?",
+      "assessment_type": "creative_writing"
+    },
+    {
+      "id": "c8-u2-l1",
+      "unit": "Unit 2",
+      "unit_name": "இயற்கை வளங்கள்",
+      "title": "நீர் — உயிரின் அடிப்படை",
+      "kalvitv_search_query": "8th tamil unit 2 kalvitv நீர் வளம்",
+      "youtube_id": "FIND_FROM_KALVITV",
+      "duration_minutes": 14,
+      "checkpoints": [
+        { "at_minute": 5, "focus": "நீரின் வகைகள் மற்றும் ஆதாரங்கள்" },
+        { "at_minute": 10, "focus": "நீர் மேலாண்மை முறைகள்" }
+      ],
+      "learning_outcomes": [
+        "நீரின் முக்கியத்துவத்தை உணர்தல்",
+        "நீர் சேமிப்பு முறைகளை அறிதல்",
+        "நீர் மாசுபாட்டின் விளைவுகளை புரிதல்"
+      ],
+      "competencies": ["reading_comprehension", "inference", "critical_thinking"],
+      "nep_skills": ["experiential_learning", "inquiry_based", "critical_thinking"],
+      "language_skills": ["reading", "comprehension", "writing"],
+      "lesson_summary": "நீரின் முக்கியத்துவம், நீர் ஆதாரங்கள், நீர் சேமிப்பு முறைகள், மற்றும் நீர் மாசுபாட்டை தடுக்கும் வழிகள் பற்றி இந்த பாடம் விவரிக்கிறது.",
+      "key_vocabulary": ["நீர்நிலை", "மழைநீர் சேகரிப்பு", "மாசுபாடு", "நீர்மேலாண்மை", "குடிநீர்"],
+      "opening_question": "உன் வீட்டில் தினமும் எவ்வளவு தண்ணீர் செலவாகும் என்று நினைக்கிறாய்? கொஞ்சம் யோசி.",
+      "assessment_type": "worksheet"
+    },
+    {
+      "id": "c8-u3-l1",
+      "unit": "Unit 3",
+      "unit_name": "இலக்கணம்",
+      "title": "வினைச்சொல் — வகைகளும் பயன்பாடும்",
+      "kalvitv_search_query": "8th tamil grammar வினைச்சொல் kalvitv",
+      "youtube_id": "FIND_FROM_KALVITV",
+      "duration_minutes": 18,
+      "checkpoints": [
+        { "at_minute": 6, "focus": "தனிவினை vs இணைவினை" },
+        { "at_minute": 12, "focus": "வினைமுற்று vs வினையெச்சம்" }
+      ],
+      "learning_outcomes": [
+        "வினைச்சொல்லின் வகைகளை அறிதல்",
+        "வினைமுற்று மற்றும் வினையெச்சத்தை வேறுபடுத்துதல்",
+        "சொந்த வாக்கியங்களில் பயன்படுத்துதல்"
+      ],
+      "competencies": ["grammar", "application", "writing"],
+      "nep_skills": ["competency_based", "critical_thinking"],
+      "language_skills": ["grammar", "writing"],
+      "lesson_summary": "தமிழ் இலக்கணத்தில் வினைச்சொல்லின் வகைகளை — தனிவினை, இணைவினை, வினைமுற்று, வினையெச்சம் — எடுத்துக்காட்டுகளுடன் விளக்குகிறது.",
+      "key_vocabulary": ["வினைச்சொல்", "தனிவினை", "இணைவினை", "வினைமுற்று", "வினையெச்சம்"],
+      "opening_question": "இப்போது 'ஓடினான்' என்ற சொல்லை பார். இந்த சொல் என்ன செய்கிறது என்று உன் வார்த்தைகளில் சொல்ல முடியுமா?",
+      "assessment_type": "grammar_exercise"
+    }
+  ]
+}

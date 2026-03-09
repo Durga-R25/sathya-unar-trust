@@ -1,0 +1,142 @@
+{
+  "class": "9",
+  "subject": "Tamil",
+  "school": "Government Higher Secondary School - Pilot",
+  "academic_year": "2025-26",
+  "playlists": {
+    "tamil": {
+      "term_1": "PL-mvKYotpGsIqNXh3FlkU2TEhHLDnkI7G",
+      "term_2": "PL-mvKYotpGsKgZR-XqgavV4jxg9ep9_jm"
+    },
+    "maths": {
+      "term_1": "PL-mvKYotpGsJ0s5EtWs5K6SSH13-hBEjl",
+      "term_2": "PL-mvKYotpGsLn-FBb1X0gHhF7hfBB4Cl5"
+    },
+    "science": {
+      "term_1": "PL-mvKYotpGsKZlFqVLeeQK2KJ7ksDArFa",
+      "term_2": "PL-mvKYotpGsKDafYDTeIyTSQyOtWmKxQL"
+    },
+    "social_science": {
+      "term_1": "PL-mvKYotpGsKLMDUNSgmb1-99_pbFIgz-",
+      "term_2": "PL-mvKYotpGsKwkTCV7fGgQDoypFD2gpIl"
+    },
+    "english": {
+      "term_1": "PL-mvKYotpGsIemhKEJZ_e-DbOMDCYGC6u"
+    },
+    "bridge_course": {
+      "term_1": "PL-mvKYotpGsLY2cDzrz-HT8U6NoFQVyol"
+    }
+  },
+  "lessons": [
+    {
+      "id": "c9-u1-l1",
+      "unit": "Unit 1",
+      "unit_name": "திருக்குறள்",
+      "title": "திருக்குறள் — அன்பின் வலிமை",
+      "kalvitv_search_query": "9th tamil unit 1 kalvitv திருக்குறள் அன்பு",
+      "youtube_id": "FIND_FROM_KALVITV",
+      "duration_minutes": 16,
+      "checkpoints": [
+        { "at_minute": 5, "focus": "அன்பின் இலக்கணம் — வள்ளுவர் கருத்து" },
+        { "at_minute": 11, "focus": "அன்பு மற்றும் உயிர் — தொடர்பு" }
+      ],
+      "learning_outcomes": [
+        "திருக்குறளில் அன்பைப் பற்றிய கருத்துகளை புரிதல்",
+        "குறளின் உள்பொருளை விளக்குதல்",
+        "அன்பை அன்றாட வாழ்க்கையோடு இணைத்தல்"
+      ],
+      "competencies": ["literary_interpretation", "critical_thinking", "moral_reasoning"],
+      "nep_skills": ["inquiry_based", "critical_thinking", "experiential_learning"],
+      "language_skills": ["reading", "comprehension", "interpretation"],
+      "lesson_summary": "திருவள்ளுவர் அன்பைப் பற்றி எழுதிய குறள்களின் ஆழமான பொருளை விவரிக்கிறது. அன்பும் உயிரும் எவ்வாறு இணைந்திருக்கின்றன என்ற தத்துவத்தை பேசுகிறது.",
+      "key_vocabulary": ["அன்பு", "நெஞ்சு", "உயிர்", "ஒட்டல்", "புணர்ச்சி"],
+      "kurals": [
+        {
+          "kural": "அன்பிற்கும் உண்டோ அடைக்குந்தாழ் ஆர்வலர்\nபுன்கணீர் பூசல் தரும்.",
+          "meaning": "அன்புக்கு தாழிட முடியாது — அன்பானவரின் கண்ணீரே கதவைத் திறந்துவிடும்."
+        },
+        {
+          "kural": "அன்பகத்தில்லா உயிர்வாழ்க்கை வன்பாற்கண்\nவற்றல் மரம்தளிர்த் தற்று.",
+          "meaning": "அன்பில்லாத உயிர், பாலைவனத்தில் தளிர்க்கும் மரம் போல் வீணானது."
+        }
+      ],
+      "opening_question": "வள்ளுவர் 'அன்பிற்கும் உண்டோ அடைக்குந்தாழ்' என்று சொல்கிறார். இந்த வரியில் என்ன சொல்ல வருகிறார் என்று உன் மனசில் என்ன தோன்றுகிறது?",
+      "assessment_type": "interpretation_essay"
+    },
+    {
+      "id": "c9-u1-l2",
+      "unit": "Unit 1",
+      "unit_name": "கவிதை",
+      "title": "பாரதியார் கவிதை — தேசியம்",
+      "kalvitv_search_query": "9th tamil bharathiyar poem kalvitv nationalism",
+      "youtube_id": "FIND_FROM_KALVITV",
+      "duration_minutes": 14,
+      "checkpoints": [
+        { "at_minute": 5, "focus": "கவிதையின் மையக் கருத்து" },
+        { "at_minute": 10, "focus": "பாரதியாரின் காலம் மற்றும் சூழல்" }
+      ],
+      "learning_outcomes": [
+        "பாரதியாரின் கவிதை பாணியை அறிதல்",
+        "தேசிய உணர்வின் வரலாற்று சூழலை புரிதல்",
+        "கவிதையின் அலங்காரங்களை கண்டறிதல்"
+      ],
+      "competencies": ["literary_interpretation", "historical_context", "poetry_analysis"],
+      "nep_skills": ["critical_thinking", "inquiry_based", "multilingual"],
+      "language_skills": ["reading", "interpretation", "oral_expression"],
+      "lesson_summary": "பாரதியாரின் தேசியக் கவிதைகளின் மூலம் சுதந்திர இயக்கத்தின் வரலாற்று சூழலையும், கவிதையில் உள்ள உருவக நயங்களையும் கற்கிறோம்.",
+      "key_vocabulary": ["சுதந்திரம்", "தேசம்", "வீரம்", "தியாகம்", "கவிதை நயம்"],
+      "opening_question": "நீ 'தேசியம்' என்று கேட்கும்போது மனதில் என்ன படம் வருகிறது? உனக்கு தேசம் என்பது என்ன என்று சொல்ல முடியுமா?",
+      "assessment_type": "oral_presentation"
+    },
+    {
+      "id": "c9-u2-l1",
+      "unit": "Unit 2",
+      "unit_name": "சிறுகதை",
+      "title": "புதுமைப்பித்தன் சிறுகதை — மனித உறவுகள்",
+      "kalvitv_search_query": "9th tamil short story kalvitv puthumaipiththan",
+      "youtube_id": "FIND_FROM_KALVITV",
+      "duration_minutes": 20,
+      "checkpoints": [
+        { "at_minute": 7, "focus": "கதாபாத்திரங்களின் மனநிலை" },
+        { "at_minute": 14, "focus": "கதையின் திருப்பம் (climax)" }
+      ],
+      "learning_outcomes": [
+        "சிறுகதையின் அமைப்பை புரிதல்",
+        "கதாபாத்திரங்களின் உளவியலை பகுப்பாய்வு செய்தல்",
+        "கதாசிரியரின் நோக்கத்தை கண்டறிதல்"
+      ],
+      "competencies": ["literary_analysis", "character_study", "inference", "critical_thinking"],
+      "nep_skills": ["inquiry_based", "critical_thinking", "experiential_learning"],
+      "language_skills": ["reading", "comprehension", "writing", "interpretation"],
+      "lesson_summary": "புதுமைப்பித்தனின் சிறுகதை மூலம் மனித உறவுகள், சமூக சிக்கல்கள், கதாபாத்திர ஆய்வு என்பவற்றை ஆழமாக கற்கிறோம்.",
+      "key_vocabulary": ["சிறுகதை", "கதாபாத்திரம்", "திருப்பம்", "உளவியல்", "சமூகம்"],
+      "opening_question": "கதையில் முதல் காட்சியில் என்ன நடக்கிறது என்று பார்த்தோம். இந்த கதாபாத்திரம் ஏன் இப்படி நடந்துகொள்கிறார் என்று உனக்கு என்ன தோன்றுகிறது?",
+      "assessment_type": "character_analysis_worksheet"
+    },
+    {
+      "id": "c9-u3-l1",
+      "unit": "Unit 3",
+      "unit_name": "இலக்கணம்",
+      "title": "தொடர் வகைகள் — எளிய மற்றும் கலவைத் தொடர்கள்",
+      "kalvitv_search_query": "9th tamil grammar sentence types kalvitv தொடர் வகைகள்",
+      "youtube_id": "FIND_FROM_KALVITV",
+      "duration_minutes": 17,
+      "checkpoints": [
+        { "at_minute": 6, "focus": "எளிய தொடர் vs கலவைத் தொடர்" },
+        { "at_minute": 12, "focus": "கூட்டுத் தொடர் உருவாக்கம்" }
+      ],
+      "learning_outcomes": [
+        "எளிய, கலவை, கூட்டுத் தொடர்களை வேறுபடுத்துதல்",
+        "ஒரு தொடரை மற்றொரு வகையாக மாற்றுதல்",
+        "சொந்த எழுத்தில் பயன்படுத்துதல்"
+      ],
+      "competencies": ["grammar", "sentence_construction", "writing"],
+      "nep_skills": ["competency_based", "application"],
+      "language_skills": ["grammar", "writing"],
+      "lesson_summary": "தமிழ் தொடர் வகைகளான எளிய தொடர், கலவைத் தொடர், கூட்டுத் தொடர் ஆகியவற்றை அடையாளம் கண்டு, ஒன்றிலிருந்து மற்றொன்றாக மாற்றும் திறன் வளர்க்கிறோம்.",
+      "key_vocabulary": ["தொடர்", "எளிய தொடர்", "கலவைத் தொடர்", "கூட்டுத் தொடர்", "இணைப்பு"],
+      "opening_question": "'நான் பள்ளிக்கு சென்றேன்' என்ற தொடரில் எத்தனை செயல்கள் நடக்கின்றன? கொஞ்சம் யோசி.",
+      "assessment_type": "grammar_exercise"
+    }
+  ]
+}
