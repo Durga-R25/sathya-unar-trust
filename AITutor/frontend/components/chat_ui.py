@@ -20,6 +20,16 @@ from backend.db.db import save_tutor_session, upsert_progress, award_badge
 # HELPER: stable session key per lesson
 # ─────────────────────────────────────────────
 
+def _get_api_key() -> str:
+    key = os.getenv("ANTHROPIC_API_KEY", "")
+    if not key:
+        try:
+            key = st.secrets["ANTHROPIC_API_KEY"]
+        except Exception:
+            pass
+    return key
+
+
 def _msg_key(lesson_id: str) -> str:
     """Chat history is stored per lesson_id — survives page reruns."""
     return f"chat_msgs_{lesson_id}"
@@ -39,7 +49,7 @@ def render_chat(student: dict, lesson: dict):
     History persists in session_state keyed to lesson_id.
     """
     import anthropic
-    client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+    client = anthropic.Anthropic(api_key=_get_api_key())
 
     key = _msg_key(lesson["id"])
 
@@ -146,7 +156,7 @@ def render_evaluation(student: dict, lesson: dict):
     Part 2 — 1 Essay question (AI evaluates in Tamil)
     """
     import anthropic
-    client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+    client = anthropic.Anthropic(api_key=_get_api_key())
 
     ekey = _eval_key(lesson["id"])
 
