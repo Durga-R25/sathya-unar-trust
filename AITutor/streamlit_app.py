@@ -11,15 +11,6 @@ import json
 import streamlit as st
 from dotenv import load_dotenv
 
-load_dotenv()
-
-# Support both local .env and Streamlit Cloud secrets
-if "ANTHROPIC_API_KEY" not in os.environ:
-    try:
-        os.environ["ANTHROPIC_API_KEY"] = st.secrets["ANTHROPIC_API_KEY"]
-    except Exception:
-        pass
-
 # Path setup
 sys.path.insert(0, os.path.dirname(__file__))
 
@@ -32,7 +23,7 @@ from backend.db.seed import auto_seed_if_empty
 from frontend.components.video_player import render_video
 from frontend.components.chat_ui import render_chat, render_evaluation
 
-# ── Page config ───────────────────────────────────────────────────────────────
+# ── Page config (must be first Streamlit call) ────────────────────────────────
 
 st.set_page_config(
     page_title="கல்வி AI",
@@ -40,6 +31,15 @@ st.set_page_config(
     layout="centered",
     initial_sidebar_state="collapsed"
 )
+
+# ── Load API key ──────────────────────────────────────────────────────────────
+
+load_dotenv()
+if "ANTHROPIC_API_KEY" not in os.environ:
+    try:
+        os.environ["ANTHROPIC_API_KEY"] = st.secrets["ANTHROPIC_API_KEY"]
+    except Exception:
+        pass
 
 # ── Global CSS ─────────────────────────────────────────────────────────────────
 
