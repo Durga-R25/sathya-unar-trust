@@ -31,9 +31,9 @@ Audio transcription tool with translation capabilities.
 
 ---
 
-### 3. [AITutor — Tamil AI Learning Platform](./AITutor/)
+### 3. [ArivAI — Tamil AI Learning Platform](./AITutor/)
 
-A Khanmigo-inspired AI tutoring platform for Tamil Nadu government school students (Class 8 & 9). Bilingual Tamil + English, mobile-first, with voice chat, Socratic AI tutor (Kalvi), lesson editor, progress tracking, and admin panel. Deployed live on Railway.
+ArivAI (அறிவு AI) — a Khanmigo-inspired AI tutoring platform for Tamil Nadu government school students (Class 8 & 9). Bilingual Tamil + English, mobile-first, with voice chat, Socratic AI tutor (Kalvi), lesson editor, progress tracking, and admin panel. Deployed live on Railway.
 
 **Key Features:**
 - 🤖 Kalvi AI — Socratic tutor, never gives direct answers, guardrailed to lesson content

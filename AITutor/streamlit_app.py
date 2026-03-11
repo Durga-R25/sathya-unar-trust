@@ -1,5 +1,5 @@
 """
-AITutor — Tamil AI Learning Platform
+ArivAI — Tamil AI Learning Platform
 Class 8 & 9 | Government School Pilot
 
 Run: streamlit run streamlit_app.py
@@ -30,7 +30,7 @@ from frontend.i18n import T
 # ── Page config (must be first Streamlit call) ────────────────────────────────
 
 st.set_page_config(
-    page_title="கல்வி AI",
+    page_title="ArivAI",
     page_icon="🎓",
     layout="centered",
     initial_sidebar_state="collapsed"
@@ -181,7 +181,7 @@ def page_login():
     st.markdown(f"""
     <div style='text-align:center;padding:20px 0 20px;'>
         <div style='font-size:64px;'>🎓</div>
-        <h1 style='color:#2563EB;font-size:32px;margin:8px 0;'>கல்வி AI</h1>
+        <h1 style='color:#2563EB;font-size:32px;margin:8px 0;'>ArivAI</h1>
         <p style='color:#666;font-size:16px;'>{T("app_subtitle", lang)}</p>
         <p style='color:#888;font-size:14px;'>Govt. Higher Secondary School</p>
     </div>

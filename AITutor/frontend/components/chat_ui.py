@@ -1,5 +1,5 @@
 """
-AI Tutor Chat Component
+ArivAI Chat Component
 - Uses st.chat_input() for Enter key support
 - History keyed to lesson_id to survive reruns
 - Includes evaluation (MCQ + essay) stage
@@ -252,7 +252,7 @@ def render_chat(student: dict, lesson: dict):
     st.markdown(f"""
     <div style='background:#1E3A8A;color:white;padding:12px 16px;
                 border-radius:10px;margin-bottom:8px;'>
-        🧑‍🏫 <b>Kalvi AI</b> — {lesson['title']}
+        🧑‍🏫 <b>ArivAI</b> — {lesson['title']}
     </div>
     """, unsafe_allow_html=True)
 
@@ -487,7 +487,7 @@ def render_evaluation(student: dict, lesson: dict):
                         border-radius:12px;padding:16px;'>
                 <div style='display:flex;justify-content:space-between;
                             align-items:center;margin-bottom:12px;'>
-                    <b style='font-size:16px;'>🤖 Kalvi AI</b>
+                    <b style='font-size:16px;'>🤖 ArivAI</b>
                     <span style='background:{score_color};color:white;
                                  padding:4px 12px;border-radius:20px;font-weight:700;'>
                         {fb.get("score", "—")}/10

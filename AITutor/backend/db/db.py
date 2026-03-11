@@ -1,5 +1,5 @@
 """
-Simple SQLite database for AITutor prototype.
+Simple SQLite database for ArivAI prototype.
 No PostgreSQL server needed — runs as a local file.
 """
 

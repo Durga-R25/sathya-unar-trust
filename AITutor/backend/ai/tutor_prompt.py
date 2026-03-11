@@ -1,5 +1,5 @@
 """
-AITutor - Tamil AI Tutor System Prompts
+ArivAI - Tamil AI Tutor System Prompts
 Khanmigo-style: Socratic, never gives direct answers, always guides thinking.
 """
 

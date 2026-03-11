@@ -1,8 +1,10 @@
-# 🎓 AITutor — Tamil AI Learning Platform for TN Government Schools
+# 🎓 ArivAI — Tamil AI Learning Platform for TN Government Schools
 
 A Khanmigo-inspired AI tutoring platform for Tamil Nadu government school students (Class 8 & 9), built mobile-first for 360px screens, bilingual (Tamil + English), and deployed on Railway.
 
-![AITutor Banner](https://via.placeholder.com/1200x300/2563EB/ffffff?text=AITutor+%E2%80%94+Tamil+AI+Learning+Platform)
+> **ArivAI** (அறிவு + AI) — "Arivu" means knowledge/wisdom in Tamil. ArivAI brings AI-powered knowledge to every government school student.
+
+![ArivAI Banner](https://via.placeholder.com/1200x300/2563EB/ffffff?text=ArivAI+%E2%80%94+Tamil+AI+Learning+Platform)
 
 **Live App:** https://sathya-unar-trust-production.up.railway.app
 
@@ -13,7 +15,7 @@ A Khanmigo-inspired AI tutoring platform for Tamil Nadu government school studen
 ### For Students
 - 📹 **Video Lessons** — Embedded KalviTV YouTube videos, lesson-specific
 - 🤖 **AI Tutor (Kalvi)** — Socratic AI tutor, never gives direct answers; always guides with questions
-- 🎤 **Voice Chat** — Speak in Tamil or English; auto-transcribed and sent to Kalvi AI
+- 🎤 **Voice Chat** — Speak in Tamil or English; auto-transcribed and sent to ArivAI
 - 📝 **Checkpoints** — MCQ questions mid-lesson before AI chat unlocks
 - 📊 **Evaluation** — Auto-generated MCQ + essay after every lesson, AI-graded
 - 🏅 **Badges** — Effort-based badges: Curious Learner, Creative Writer, Lesson Complete
@@ -260,6 +262,7 @@ MIT License — see [LICENSE](../LICENSE) for details.
 
 **Built with ❤️ for Tamil Nadu government school students**
 
+**App Name:** ArivAI (அறிவு AI)
 **Version:** 2.0 (Phase 3 complete)
 **Deployed:** https://sathya-unar-trust-production.up.railway.app
 **Last Updated:** March 2026

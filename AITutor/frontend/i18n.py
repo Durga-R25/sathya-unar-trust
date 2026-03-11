@@ -8,7 +8,7 @@ Usage:
 
 _STRINGS = {
     # ── Login ────────────────────────────────────────────────────
-    "app_subtitle":       {"en": "AI Learning Assistant",         "ta": "கற்றல் உதவியாளர்"},
+    "app_subtitle":       {"en": "ArivAI — Tamil AI Learning",     "ta": "ArivAI — தமிழ் AI கற்றல்"},
     "student_tab":        {"en": "📚 Student",                    "ta": "📚 மாணவர்"},
     "teacher_tab":        {"en": "👨‍🏫 Teacher",                   "ta": "👨‍🏫 ஆசிரியர்"},
     "name_label":         {"en": "Your Name",                     "ta": "உன் பெயர்"},
@@ -51,7 +51,7 @@ _STRINGS = {
     "think_before":       {"en": "💡 Think before watching:",      "ta": "💡 வீடியோ பார்க்கும்முன் யோசி:"},
     "watch_done_msg":     {"en": "✅ After watching the video, click the button below",
                            "ta": "✅ வீடியோ பார்த்த பிறகு கீழே உள்ள பொத்தானை அழுத்து"},
-    "watch_done_btn":     {"en": "▶ Done watching — Chat with AI Tutor",
+    "watch_done_btn":     {"en": "▶ Done watching — Chat with ArivAI",
                            "ta": "▶ வீடியோ பார்த்தாயிற்று — AI உடன் பேசுவோம்"},
 
     # ── Summary ──────────────────────────────────────────────────
