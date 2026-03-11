@@ -403,11 +403,12 @@ def page_lesson():
         return
 
     stage = st.session_state.get("lesson_stage", "video")
+    eng = (lesson.get("subject") or "").strip().lower() == "english"
 
     # Back button + title
     col_back, col_title = st.columns([1, 5])
     with col_back:
-        if st.button("← திரும்பு"):
+        if st.button("← Back" if eng else "← திரும்பு"):
             go("home")
     with col_title:
         st.markdown(f"""
@@ -427,7 +428,8 @@ def page_lesson():
     if stage == "video":
         _render_stage_bar(active=1)
         # Learning objectives
-        st.markdown("**இந்த பாடத்தில் நீ கற்பாய்:**")
+        st.markdown("**In this lesson, you will learn:**" if eng else
+                    "**இந்த பாடத்தில் நீ கற்பாய்:**")
         summary = lesson.get("lesson_summary", "")
         if summary:
             st.markdown(f"""
@@ -442,11 +444,12 @@ def page_lesson():
         opening = lesson.get("opening_question", "")
         if opening:
             st.markdown("<br>", unsafe_allow_html=True)
+            think_label = "💡 <b>Think before watching:</b>" if eng else "💡 <b>வீடியோ பார்க்கும்முன் யோசி:</b>"
             st.markdown(f"""
             <div style='background:#FFF3CD;border-left:4px solid #FF6B35;
                         padding:12px 16px;border-radius:8px;font-size:15px;
                         font-family:"Noto Sans Tamil",sans-serif;'>
-                💡 <b>வீடியோ பார்க்கும்முன் யோசி:</b><br>{opening}
+                {think_label}<br>{opening}
             </div>
             """, unsafe_allow_html=True)
 
@@ -462,16 +465,21 @@ def page_lesson():
 
         # Mark video watched + move to tutor
         st.markdown("<br>", unsafe_allow_html=True)
-        st.markdown("""
+        done_msg = ("✅ After watching the video, click the button below"
+                    if eng else
+                    "✅ வீடியோ பார்த்த பிறகு கீழே உள்ள பொத்தானை அழுத்து")
+        st.markdown(f"""
         <div style='background:#D5F5E3;padding:12px 16px;border-radius:8px;
                     font-size:15px;font-family:"Noto Sans Tamil",sans-serif;'>
-            ✅ வீடியோ பார்த்த பிறகு கீழே உள்ள பொத்தானை அழுத்து
+            {done_msg}
         </div>
         """, unsafe_allow_html=True)
         st.markdown("<br>", unsafe_allow_html=True)
 
-        if st.button("▶ வீடியோ பார்த்தாயிற்று — AI உடன் பேசுவோம்",
-                     use_container_width=True):
+        btn_label = ("▶ Done watching — Chat with AI Tutor"
+                     if eng else
+                     "▶ வீடியோ பார்த்தாயிற்று — AI உடன் பேசுவோம்")
+        if st.button(btn_label, use_container_width=True):
             upsert_progress(user["id"], lesson_id, video_watched=1)
             st.session_state["lesson_stage"] = "tutor"
             st.rerun()
