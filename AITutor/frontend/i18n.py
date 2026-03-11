@@ -61,6 +61,17 @@ _STRINGS = {
     "home_btn":           {"en": "🏠 Home",                       "ta": "🏠 முகப்பு பக்கம்"},
     "chat_again_btn":     {"en": "🤖 Chat with AI again",         "ta": "🤖 மீண்டும் AI உடன் பேசு"},
 
+    # ── Voice ────────────────────────────────────────────────────
+    "voice_btn":          {"en": "🎤 Voice",                        "ta": "🎤 குரல்"},
+    "text_btn":           {"en": "⌨️ Text",                         "ta": "⌨️ எழுத்து"},
+    "speak_prompt":       {"en": "🎤 Tap to record, then stop",     "ta": "🎤 பேசி நிறுத்தவும்"},
+    "transcribing":       {"en": "Listening...",                    "ta": "கேட்கிறேன்..."},
+    "you_said":           {"en": "You said",                        "ta": "நீ சொன்னது"},
+    "voice_error":        {"en": "Couldn't understand. Please try again.",
+                           "ta": "புரியவில்லை. மீண்டும் முயற்சிக்கவும்."},
+    "voice_offline":      {"en": "No internet for voice. Please type instead.",
+                           "ta": "குரல் சேவை இல்லை. எழுத்தில் தட்டவும்."},
+
     # ── Chat UI ──────────────────────────────────────────────────
     "chat_opening_q":     {"en": "Hello! Great job watching the video! What was the most interesting thing you noticed in this lesson?",
                            "ta": "வணக்கம்! வீடியோ பார்த்தாய் — நல்லது! இந்த பாடத்தில் உனக்கு என்ன ஆர்வமாக இருந்தது?"},

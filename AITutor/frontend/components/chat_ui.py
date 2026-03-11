@@ -6,6 +6,7 @@ AI Tutor Chat Component
 - Bilingual via frontend.i18n.T()
 """
 
+import io
 import os
 import sys
 import json
@@ -143,14 +144,83 @@ def _render_checkpoint(student: dict, lesson: dict) -> bool:
     return False
 
 
+# ── Voice transcription ────────────────────────────────────────────
+
+def _transcribe(audio_file, lang: str) -> str:
+    """Transcribe audio using Google STT (free, no API key). Returns empty string on failure."""
+    try:
+        import speech_recognition as sr
+    except ImportError:
+        return ""
+
+    lang_code = "ta-IN" if lang == "ta" else "en-IN"
+    recognizer = sr.Recognizer()
+    try:
+        audio_bytes = audio_file.read()
+        with sr.AudioFile(io.BytesIO(audio_bytes)) as source:
+            audio_data = recognizer.record(source)
+        return recognizer.recognize_google(audio_data, language=lang_code)
+    except sr.UnknownValueError:
+        return ""
+    except sr.RequestError:
+        return "__offline__"
+    except Exception:
+        return ""
+
+
 # ── Chat ──────────────────────────────────────────────────────────
+
+def _send_message(user_text: str, student: dict, lesson: dict,
+                  messages: list, system_prompt: str, client, key: str):
+    """Process one user message: append, get AI reply, save, update badges."""
+    lang = _lang(lesson)
+
+    messages.append({"role": "user", "content": user_text})
+
+    with st.chat_message("user", avatar="👤"):
+        st.markdown(
+            f"<span style='font-family:\"Noto Sans Tamil\",sans-serif;"
+            f"font-size:16px;'>{user_text}</span>",
+            unsafe_allow_html=True
+        )
+
+    with st.chat_message("assistant", avatar="🤖"):
+        with st.spinner(T("ai_thinking", lang)):
+            response = client.messages.create(
+                model="claude-haiku-4-5-20251001",
+                max_tokens=350,
+                system=system_prompt,
+                messages=messages
+            )
+            ai_reply = response.content[0].text
+
+        st.markdown(
+            f"<span style='font-family:\"Noto Sans Tamil\",sans-serif;"
+            f"font-size:16px;line-height:1.8;'>{ai_reply}</span>",
+            unsafe_allow_html=True
+        )
+        messages.append({"role": "assistant", "content": ai_reply})
+
+    st.session_state[key] = messages
+    save_tutor_session(student["id"], lesson["id"], messages)
+
+    turn_count = len([m for m in messages if m["role"] == "user"])
+    upsert_progress(student["id"], lesson["id"], tutor_turns=turn_count)
+
+    if turn_count == 5:
+        newly = award_badge(student["id"], "curious_learner", T("curious_badge", lang))
+        if newly:
+            st.balloons()
+            st.success(T("new_badge", lang))
+
 
 def render_chat(student: dict, lesson: dict):
     import anthropic
     client = anthropic.Anthropic(api_key=_get_api_key())
 
-    lang = _lang(lesson)
-    key  = _msg_key(lesson["id"])
+    lang  = _lang(lesson)
+    key   = _msg_key(lesson["id"])
+    lid   = lesson["id"]
 
     # ── Checkpoint gate ───────────────────────────────────────────
     if not _render_checkpoint(student, lesson):
@@ -196,53 +266,64 @@ def render_chat(student: dict, lesson: dict):
             )
 
     turn_count = len([m for m in messages if m["role"] == "user"])
-    st.caption(f"{T('turns_label', lang)}: {turn_count}")
 
-    user_input = st.chat_input(T("chat_placeholder", lang))
+    # ── Input mode toggle (Voice / Text) ─────────────────────────
+    voice_key = f"voice_mode_{lid}"
+    if voice_key not in st.session_state:
+        st.session_state[voice_key] = False
 
-    if user_input and user_input.strip():
-        messages.append({"role": "user", "content": user_input.strip()})
+    col_turns, col_toggle = st.columns([4, 1])
+    with col_turns:
+        st.caption(f"{T('turns_label', lang)}: {turn_count}")
+    with col_toggle:
+        toggle_label = T("text_btn", lang) if st.session_state[voice_key] else T("voice_btn", lang)
+        if st.button(toggle_label, key=f"toggle_voice_{lid}", use_container_width=True):
+            st.session_state[voice_key] = not st.session_state[voice_key]
+            st.rerun()
 
-        with st.chat_message("user", avatar="👤"):
-            st.markdown(
-                f"<span style='font-family:\"Noto Sans Tamil\",sans-serif;"
-                f"font-size:16px;'>{user_input.strip()}</span>",
-                unsafe_allow_html=True
-            )
+    # ── Voice mode ────────────────────────────────────────────────
+    if st.session_state[voice_key]:
+        st.markdown(f"""
+        <div style='background:#EFF6FF;border:2px dashed #2563EB;border-radius:12px;
+                    padding:14px 16px;margin:8px 0;text-align:center;
+                    font-family:"Noto Sans Tamil",sans-serif;font-size:15px;color:#1E3A8A;'>
+            {T("speak_prompt", lang)}
+        </div>
+        """, unsafe_allow_html=True)
 
-        with st.chat_message("assistant", avatar="🤖"):
-            with st.spinner(T("ai_thinking", lang)):
-                response = client.messages.create(
-                    model="claude-haiku-4-5-20251001",
-                    max_tokens=350,
-                    system=system_prompt,
-                    messages=messages
-                )
-                ai_reply = response.content[0].text
+        # Key rotates with turn_count so widget resets after each send
+        audio_val = st.audio_input(
+            label=T("speak_prompt", lang),
+            key=f"audio_input_{lid}_{turn_count}",
+            label_visibility="collapsed"
+        )
 
-            st.markdown(
-                f"<span style='font-family:\"Noto Sans Tamil\",sans-serif;"
-                f"font-size:16px;line-height:1.8;'>{ai_reply}</span>",
-                unsafe_allow_html=True
-            )
-            messages.append({"role": "assistant", "content": ai_reply})
+        if audio_val is not None:
+            with st.spinner(T("transcribing", lang)):
+                transcribed = _transcribe(audio_val, lang)
 
-        st.session_state[key] = messages
-        save_tutor_session(student["id"], lesson["id"], messages)
+            if transcribed == "__offline__":
+                st.warning(T("voice_offline", lang))
+            elif transcribed:
+                st.info(f"**{T('you_said', lang)}:** {transcribed}")
+                _send_message(transcribed, student, lesson,
+                              messages, system_prompt, client, key)
+                st.rerun()
+            else:
+                st.warning(T("voice_error", lang))
 
-        turn_count = len([m for m in messages if m["role"] == "user"])
-        upsert_progress(student["id"], lesson["id"], tutor_turns=turn_count)
-
-        if turn_count == 5:
-            newly = award_badge(student["id"], "curious_learner", T("curious_badge", lang))
-            if newly:
-                st.balloons()
-                st.success(T("new_badge", lang))
+    # ── Text mode ─────────────────────────────────────────────────
+    else:
+        user_input = st.chat_input(T("chat_placeholder", lang))
+        if user_input and user_input.strip():
+            _send_message(user_input.strip(), student, lesson,
+                          messages, system_prompt, client, key)
+            st.rerun()
 
     st.markdown("<br>", unsafe_allow_html=True)
     if turn_count >= 3:
         if st.button(T("go_eval_btn", lang), use_container_width=True,
-                     key=f"go_eval_{lesson['id']}"):
+                     key=f"go_eval_{lid}"):
             st.session_state["lesson_stage"] = "evaluate"
             st.rerun()
 

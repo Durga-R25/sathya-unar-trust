@@ -10,3 +10,6 @@ yt-dlp==2024.11.4
 
 # Utilities
 pydantic==2.9.0
+
+# Voice input transcription (uses Google free STT, no API key needed)
+SpeechRecognition==3.11.0
