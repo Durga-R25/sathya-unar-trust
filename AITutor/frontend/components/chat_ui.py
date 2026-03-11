@@ -90,7 +90,7 @@ def render_chat(student: dict, lesson: dict):
         )
 
     st.markdown(f"""
-    <div style='background:#1B4F8A;color:white;padding:12px 16px;
+    <div style='background:#1E3A8A;color:white;padding:12px 16px;
                 border-radius:10px;margin-bottom:8px;'>
         🧑‍🏫 <b>Kalvi AI</b> — {lesson['title']}
     </div>
@@ -181,7 +181,7 @@ def render_evaluation(student: dict, lesson: dict):
     ev = st.session_state[ekey]
 
     st.markdown(f"""
-    <div style='background:linear-gradient(135deg,#FF6B35,#E55A2B);color:white;
+    <div style='background:linear-gradient(135deg,#1D4ED8,#2563EB);color:white;
                 padding:16px;border-radius:12px;margin-bottom:20px;'>
         {T("eval_header", lang)}
     </div>
@@ -266,7 +266,7 @@ def render_evaluation(student: dict, lesson: dict):
 
     if ev["essay_question"]:
         st.markdown(f"""
-        <div style='background:#EBF5FB;border-left:4px solid #1B4F8A;
+        <div style='background:#EFF6FF;border-left:4px solid #2563EB;
                     padding:14px 16px;border-radius:8px;margin-bottom:16px;
                     font-family:"Noto Sans Tamil",sans-serif;font-size:16px;'>
             🖊️ {ev['essay_question']}

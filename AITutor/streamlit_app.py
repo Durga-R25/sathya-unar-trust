@@ -51,30 +51,34 @@ st.markdown("""
 html, body, [class*="css"] {
     font-family: 'Noto Sans Tamil', sans-serif !important;
     font-size: 16px;
+    background-color: #F0F7FF;
 }
 .stButton > button {
-    background-color: #FF6B35;
+    background-color: #2563EB;
     color: white;
     border: none;
-    border-radius: 8px;
+    border-radius: 10px;
     font-family: 'Noto Sans Tamil', sans-serif;
     font-size: 16px;
     padding: 8px 20px;
+    transition: background 0.2s;
 }
 .stButton > button:hover {
-    background-color: #E55A2B;
+    background-color: #1D4ED8;
 }
 .stTextInput > div > input {
     font-family: 'Noto Sans Tamil', sans-serif;
     font-size: 16px;
     border-radius: 8px;
+    border: 1.5px solid #BFDBFE;
 }
 .metric-card {
     background: white;
-    border-radius: 12px;
+    border-radius: 14px;
     padding: 16px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    box-shadow: 0 2px 12px rgba(37,99,235,0.08);
     text-align: center;
+    border-top: 3px solid #2563EB;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -86,12 +90,12 @@ auto_seed_if_empty()
 # ── Subject config ────────────────────────────────────────────────────────────
 
 SUBJECTS = {
-    "தமிழ்":            {"icon": "📚", "color": "#FF6B35", "key": "tamil"},
-    "கணிதம்":           {"icon": "🔢", "color": "#1B4F8A", "key": "maths"},
-    "அறிவியல்":         {"icon": "🔬", "color": "#27AE60", "key": "science"},
-    "சமூக அறிவியல்":    {"icon": "🌍", "color": "#8E44AD", "key": "social"},
-    "English":           {"icon": "🗣️", "color": "#E67E22", "key": "english"},
-    "Bridge Course":     {"icon": "🌉", "color": "#16A085", "key": "bridge"},
+    "தமிழ்":            {"icon": "📚", "color": "#2563EB", "key": "tamil"},
+    "கணிதம்":           {"icon": "🔢", "color": "#1D4ED8", "key": "maths"},
+    "அறிவியல்":         {"icon": "🔬", "color": "#0369A1", "key": "science"},
+    "சமூக அறிவியல்":    {"icon": "🌍", "color": "#1E40AF", "key": "social"},
+    "English":           {"icon": "🗣️", "color": "#0284C7", "key": "english"},
+    "Bridge Course":     {"icon": "🌉", "color": "#0E7490", "key": "bridge"},
 }
 
 # ── Language helpers ──────────────────────────────────────────────────────────
@@ -153,8 +157,8 @@ def page_login():
     <style>
     div[data-testid="stHorizontalBlock"]:first-of-type div[data-testid="stButton"] button {{
         background: white !important;
-        color: #1B4F8A !important;
-        border: 2px solid #1B4F8A !important;
+        color: #2563EB !important;
+        border: 2px solid #2563EB !important;
         font-size: 14px !important;
         padding: 4px 12px !important;
         border-radius: 20px !important;
@@ -172,7 +176,7 @@ def page_login():
     st.markdown(f"""
     <div style='text-align:center;padding:20px 0 20px;'>
         <div style='font-size:64px;'>🎓</div>
-        <h1 style='color:#1B4F8A;font-size:32px;margin:8px 0;'>கல்வி AI</h1>
+        <h1 style='color:#2563EB;font-size:32px;margin:8px 0;'>கல்வி AI</h1>
         <p style='color:#666;font-size:16px;'>{T("app_subtitle", lang)}</p>
         <p style='color:#888;font-size:14px;'>Govt. Higher Secondary School</p>
     </div>
@@ -254,7 +258,7 @@ def page_home():
     turns_total = sum(p.get("tutor_turns", 0) or 0 for p in progress)
 
     st.markdown(f"""
-    <div style='background:linear-gradient(135deg,#1B4F8A,#2980B9);
+    <div style='background:linear-gradient(135deg,#1E3A8A,#2563EB);
                 color:white;padding:18px 20px;border-radius:12px;margin-bottom:16px;'>
         <h2 style='margin:0;font-size:21px;'>{T("greeting")}, {user['name']}! 👋</h2>
         <p style='margin:3px 0 0;opacity:.85;font-size:14px;'>
@@ -266,7 +270,7 @@ def page_home():
     c1, c2, c3 = st.columns(3)
     for col, val, label, color in [
         (c1, done_total,   T("lessons_done", lang), "#1B4F8A"),
-        (c2, turns_total,  T("ai_chats", lang),     "#FF6B35"),
+        (c2, turns_total,  T("ai_chats", lang),     "#0284C7"),
         (c3, len(badges),  T("badges", lang),       "#27AE60"),
     ]:
         with col:
@@ -406,7 +410,7 @@ def _render_stage_bar(active: int):
     cols = st.columns(3)
     for i, (col, label) in enumerate(zip(cols, stages), 1):
         with col:
-            color  = "#FF6B35" if i == active else ("#27AE60" if i < active else "#BDC3C7")
+            color  = "#2563EB" if i == active else ("#22C55E" if i < active else "#CBD5E1")
             weight = "700" if i == active else "400"
             st.markdown(
                 f"<div style='text-align:center;color:{color};"
@@ -443,7 +447,7 @@ def page_lesson():
             go("home")
     with col_title:
         st.markdown(f"""
-        <h2 style='color:#1B4F8A;font-size:20px;margin:0;padding-top:6px;'>
+        <h2 style='color:#2563EB;font-size:20px;margin:0;padding-top:6px;'>
             {lesson['title']}
         </h2>
         <p style='color:#888;font-size:13px;margin:2px 0 0;'>
@@ -474,7 +478,7 @@ def page_lesson():
         if opening:
             st.markdown("<br>", unsafe_allow_html=True)
             st.markdown(f"""
-            <div style='background:#FFF3CD;border-left:4px solid #FF6B35;
+            <div style='background:#EFF6FF;border-left:4px solid #2563EB;
                         padding:12px 16px;border-radius:8px;font-size:15px;
                         font-family:"Noto Sans Tamil",sans-serif;'>
                 {T("think_before", lang)}<br>{opening}
@@ -587,7 +591,7 @@ def page_teacher():
     user = st.session_state["user"]
 
     st.markdown(f"""
-    <div style='background:linear-gradient(135deg,#1B4F8A,#154360);
+    <div style='background:linear-gradient(135deg,#1E3A8A,#1D4ED8);
                 color:white;padding:20px;border-radius:12px;margin-bottom:20px;'>
         <h2 style='margin:0;font-size:22px;'>🏫 {"Teacher Dashboard" if lang == "en" else "ஆசிரியர் பலகை"}</h2>
         <p style='margin:4px 0 0;opacity:0.85;'>{user['name']}</p>
