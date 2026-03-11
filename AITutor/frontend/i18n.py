@@ -97,6 +97,36 @@ _STRINGS = {
     "complete_btn":       {"en": "🎉 Lesson Complete!",           "ta": "🎉 பாடம் முடித்தேன்!"},
     "essay_badge":        {"en": "Creative Writer ✍️",            "ta": "படைப்பாளி ✍️"},
     "lesson_badge":       {"en": "Lesson Complete 📚",            "ta": "பாடம் முடித்தேன் 📚"},
+
+    # ── Admin ─────────────────────────────────────────────────────
+    "admin_tab":          {"en": "🔧 Admin",                      "ta": "🔧 நிர்வாகி"},
+    "schools_tab":        {"en": "🏫 Schools",                    "ta": "🏫 பள்ளிகள்"},
+    "teachers_tab":       {"en": "👨‍🏫 Teachers",                  "ta": "👨‍🏫 ஆசிரியர்கள்"},
+    "students_tab":       {"en": "📚 Students",                   "ta": "📚 மாணவர்கள்"},
+    "all_users_tab":      {"en": "👥 All Users",                  "ta": "👥 அனைவரும்"},
+    "add_school":         {"en": "Add School",                    "ta": "பள்ளி சேர்"},
+    "add_teacher":        {"en": "Add Teacher",                   "ta": "ஆசிரியர் சேர்"},
+    "import_csv":         {"en": "📂 Import Students (CSV)",      "ta": "📂 மாணவர் இறக்குமதி (CSV)"},
+    "csv_format":         {"en": "CSV format: name,class,section,pin", "ta": "CSV வடிவம்: பெயர்,வகுப்பு,பிரிவு,PIN"},
+    "import_btn":         {"en": "Import",                        "ta": "இறக்குமதி"},
+    "delete_btn":         {"en": "Delete",                        "ta": "நீக்கு"},
+    "save_btn":           {"en": "💾 Save",                       "ta": "💾 சேமி"},
+    "saved_ok":           {"en": "✅ Saved!",                     "ta": "✅ சேமிக்கப்பட்டது!"},
+
+    # ── Teacher editor ────────────────────────────────────────────
+    "edit_lessons":       {"en": "📝 Edit Lessons",               "ta": "📝 பாடங்கள் திருத்து"},
+    "lesson_editor":      {"en": "Lesson Editor",                 "ta": "பாட திருத்தி"},
+    "youtube_id":         {"en": "YouTube Video ID",              "ta": "YouTube வீடியோ ID"},
+    "duration":           {"en": "Duration (minutes)",            "ta": "நேரம் (நிமிடங்கள்)"},
+    "summary":            {"en": "Lesson Summary",                "ta": "பாட சுருக்கம்"},
+    "opening_q":          {"en": "Opening Question",              "ta": "தொடக்க கேள்வி"},
+    "checkpoints":        {"en": "Checkpoint Questions",          "ta": "இடை நிறுத்த கேள்விகள்"},
+
+    # ── Progress ──────────────────────────────────────────────────
+    "progress_tab":       {"en": "📊 Progress",                   "ta": "📊 முன்னேற்றம்"},
+    "leaderboard_tab":    {"en": "🏆 Leaderboard",                "ta": "🏆 சிறந்தோர்"},
+    "avg_score":          {"en": "Avg Score",                     "ta": "சராசரி மதிப்பெண்"},
+    "no_data":            {"en": "No data yet",                   "ta": "தரவு இல்லை"},
 }
 
 

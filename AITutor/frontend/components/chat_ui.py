@@ -57,6 +57,92 @@ def _now() -> str:
     return datetime.now().isoformat()
 
 
+# ── Checkpoint ────────────────────────────────────────────────────
+
+def _render_checkpoint(student: dict, lesson: dict) -> bool:
+    """
+    Show checkpoint MCQ if not yet answered.
+    Returns True when all checkpoints are done (or none exist).
+    """
+    lang = _lang(lesson)
+    lid  = lesson["id"]
+
+    try:
+        checkpoints = json.loads(lesson.get("checkpoint_json") or "[]")
+    except Exception:
+        checkpoints = []
+
+    if not checkpoints:
+        return True  # nothing to check
+
+    cp_key = f"checkpoint_done_{lid}"
+    if st.session_state.get(cp_key):
+        return True  # already answered
+
+    cp_idx_key = f"checkpoint_idx_{lid}"
+    idx = st.session_state.get(cp_idx_key, 0)
+
+    if idx >= len(checkpoints):
+        st.session_state[cp_key] = True
+        return True
+
+    cp = checkpoints[idx]
+    question = cp.get("question", "")
+    options  = cp.get("options", [])
+    answer   = cp.get("answer", "")
+
+    if not question:
+        # skip empty checkpoint
+        st.session_state[cp_idx_key] = idx + 1
+        st.rerun()
+        return False
+
+    st.markdown(f"""
+    <div style='background:#EFF6FF;border-left:4px solid #2563EB;
+                padding:14px 16px;border-radius:10px;margin-bottom:12px;'>
+        <b style='color:#1E3A8A;'>{'Checkpoint' if lang == 'en' else 'இடை நிறுத்தம்'} {idx+1}/{len(checkpoints)}</b><br>
+        <span style='font-family:"Noto Sans Tamil",sans-serif;font-size:16px;'>
+            {question}
+        </span>
+    </div>
+    """, unsafe_allow_html=True)
+
+    cp_ans_key = f"cp_ans_{lid}_{idx}"
+    chosen = st.radio(
+        label="Choose answer" if lang == "en" else "விடை தேர்வு செய்",
+        options=options,
+        index=None,
+        key=cp_ans_key,
+    )
+
+    submitted_key = f"cp_submitted_{lid}_{idx}"
+    if not st.session_state.get(submitted_key):
+        if st.button("Submit" if lang == "en" else "சமர்ப்பி",
+                     key=f"cp_submit_{lid}_{idx}",
+                     disabled=(chosen is None)):
+            st.session_state[submitted_key] = True
+            st.session_state[f"cp_chosen_{lid}_{idx}"] = chosen
+            upsert_progress(student["id"], lid, checkpoint_answered=1)
+            st.rerun()
+    else:
+        final_chosen = st.session_state.get(f"cp_chosen_{lid}_{idx}", "")
+        is_correct   = (final_chosen == answer)
+        if is_correct:
+            st.success("✅ " + ("Correct!" if lang == "en" else "சரியான விடை!"))
+        else:
+            st.error("❌ " + ("Incorrect." if lang == "en" else "தவறான விடை.") +
+                     f" {'Correct answer' if lang == 'en' else 'சரியான விடை'}: **{answer}**")
+
+        if st.button("Continue" if lang == "en" else "தொடர்",
+                     key=f"cp_next_{lid}_{idx}"):
+            st.session_state[cp_idx_key] = idx + 1
+            if idx + 1 >= len(checkpoints):
+                st.session_state[cp_key] = True
+            st.rerun()
+
+    return False
+
+
 # ── Chat ──────────────────────────────────────────────────────────
 
 def render_chat(student: dict, lesson: dict):
@@ -65,6 +151,10 @@ def render_chat(student: dict, lesson: dict):
 
     lang = _lang(lesson)
     key  = _msg_key(lesson["id"])
+
+    # ── Checkpoint gate ───────────────────────────────────────────
+    if not _render_checkpoint(student, lesson):
+        return
 
     if key not in st.session_state:
         opening = lesson.get("opening_question") or T("chat_opening_q", lang)

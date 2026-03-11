@@ -53,6 +53,7 @@ def seed_users(conn, school_id: int):
         ("லாவண்யா",       "student", "9", "A", "1234", school_id),
         ("ஆசிரியர் மீனா", "teacher", None, None, "teacher123", school_id),
         ("ஆசிரியர் ரவி",  "teacher", None, None, "teacher123", school_id),
+        ("Admin",          "admin",   None, None, "admin123",   school_id),
     ]
     for name, role, cls, sec, pin, sid in users:
         conn.execute(

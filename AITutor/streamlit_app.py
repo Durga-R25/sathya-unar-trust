@@ -15,13 +15,16 @@ from dotenv import load_dotenv
 sys.path.insert(0, os.path.dirname(__file__))
 
 from backend.db.db import (
-    init_db, login_user, login_teacher,
+    init_db, login_user, login_teacher, login_admin,
     get_lessons, get_lesson, get_progress,
     upsert_progress, get_badges, get_class_progress
 )
 from backend.db.seed import auto_seed_if_empty
 from frontend.components.video_player import render_video
 from frontend.components.chat_ui import render_chat, render_evaluation
+from frontend.components.admin_panel import render_admin_panel
+from frontend.components.progress_charts import render_progress_charts, render_leaderboard
+from frontend.components.lesson_editor import render_lesson_editor
 from frontend.i18n import T
 
 # ── Page config (must be first Streamlit call) ────────────────────────────────
@@ -184,7 +187,9 @@ def page_login():
     </div>
     """, unsafe_allow_html=True)
 
-    tab_student, tab_teacher = st.tabs([T("student_tab", lang), T("teacher_tab", lang)])
+    tab_student, tab_teacher, tab_admin = st.tabs([
+        T("student_tab", lang), T("teacher_tab", lang), T("admin_tab", lang)
+    ])
 
     with tab_student:
         st.markdown("<br>", unsafe_allow_html=True)
@@ -238,6 +243,27 @@ def page_login():
         st.markdown("""
         <div style='text-align:center;color:#888;font-size:13px;margin-top:16px;'>
             Demo PIN: <b>teacher123</b>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with tab_admin:
+        st.markdown("<br>", unsafe_allow_html=True)
+        a_name = st.text_input("Admin Name" if lang == "en" else "நிர்வாகி பெயர்",
+                               placeholder="Admin", key="admin_name_input")
+        a_pin  = st.text_input("Admin PIN", type="password", max_chars=20,
+                               placeholder="admin123", key="admin_pin_input")
+        st.markdown("<br>", unsafe_allow_html=True)
+        if st.button(T("admin_tab", lang) + " →", use_container_width=True, key="admin_login_btn"):
+            admin = login_admin(a_name.strip(), a_pin)
+            if admin:
+                st.session_state["user"] = admin
+                go("admin")
+            else:
+                st.error(T("invalid_login", lang))
+
+        st.markdown("""
+        <div style='text-align:center;color:#888;font-size:13px;margin-top:16px;'>
+            Demo PIN: <b>admin123</b>
         </div>
         """, unsafe_allow_html=True)
 
@@ -585,6 +611,23 @@ def page_summary():
 
 
 # ════════════════════════════════════════════════════════════════════
+# PAGE: ADMIN
+# ════════════════════════════════════════════════════════════════════
+
+def page_admin():
+    lang = _ui_lang()
+    user = st.session_state["user"]
+
+    render_admin_panel(user, lang)
+
+    st.markdown("<br>", unsafe_allow_html=True)
+    if st.button(T("logout_btn", lang), key="admin_logout"):
+        for k in list(st.session_state.keys()):
+            del st.session_state[k]
+        go("login")
+
+
+# ════════════════════════════════════════════════════════════════════
 # PAGE: TEACHER DASHBOARD
 # ════════════════════════════════════════════════════════════════════
 
@@ -606,12 +649,9 @@ def page_teacher():
         with tab:
             progress_list = get_class_progress(cls)
 
-            if not progress_list:
-                st.info("No students yet" if lang == "en" else "மாணவர்கள் இல்லை")
-                continue
-
             total_students = len(progress_list)
-            active = sum(1 for p in progress_list if p.get("lessons_done") or 0 > 0)
+            active = sum(1 for p in progress_list if (p.get("lessons_done") or 0) > 0)
+            avg_done = sum((p.get("lessons_done") or 0) for p in progress_list) / max(total_students, 1)
 
             col1, col2, col3 = st.columns(3)
             with col1:
@@ -619,31 +659,22 @@ def page_teacher():
             with col2:
                 st.metric("Active" if lang == "en" else "செயல்பாட்டில்", active)
             with col3:
-                avg_done = sum((p.get("lessons_done") or 0) for p in progress_list) / max(total_students, 1)
                 st.metric("Avg Lessons" if lang == "en" else "சராசரி பாடங்கள்", f"{avg_done:.1f}")
 
-            st.markdown("<br>", unsafe_allow_html=True)
-            st.markdown(f"**{'Student Progress' if lang == 'en' else 'மாணவர் முன்னேற்றம்'}:**")
+            prog_tab, lead_tab, edit_tab = st.tabs([
+                T("progress_tab", lang),
+                T("leaderboard_tab", lang),
+                T("edit_lessons", lang),
+            ])
 
-            for p in progress_list:
-                done  = p.get("lessons_done") or 0
-                turns = p.get("total_tutor_turns") or 0
-                last  = p.get("last_active", "")[:10] if p.get("last_active") else "—"
-                alert = "⚠️" if done == 0 else ("💬" if turns == 0 else "")
+            with prog_tab:
+                render_progress_charts(cls, lang)
 
-                st.markdown(f"""
-                <div style='background:white;border-radius:10px;padding:12px 16px;
-                            margin-bottom:8px;border-left:4px solid {"#E74C3C" if alert == "⚠️" else "#27AE60"};
-                            box-shadow:0 1px 4px rgba(0,0,0,0.07);'>
-                    <b style='font-family:"Noto Sans Tamil",sans-serif;'>{alert} {p['name']}</b>
-                    &nbsp;&nbsp;
-                    <small style='color:#888;'>
-                        📚 {done} lessons &nbsp;|&nbsp;
-                        🤖 {turns} AI chats &nbsp;|&nbsp;
-                        📅 {last}
-                    </small>
-                </div>
-                """, unsafe_allow_html=True)
+            with lead_tab:
+                render_leaderboard(cls, lang)
+
+            with edit_tab:
+                render_lesson_editor(cls, lang)
 
     st.markdown("<br>", unsafe_allow_html=True)
     if st.button(T("logout_btn", lang)):
@@ -670,6 +701,7 @@ def main():
         "lesson":  page_lesson,
         "summary": page_summary,
         "teacher": page_teacher,
+        "admin":   page_admin,
     }
 
     routes.get(page, page_login)()

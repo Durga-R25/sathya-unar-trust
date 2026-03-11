@@ -266,6 +266,17 @@ def get_badges(student_id: int) -> list[dict]:
 
 # ── Teacher view ──────────────────────────────────────────────────────────────
 
+def get_class_students(class_name: str) -> list[dict]:
+    """Return student list with id for a given class."""
+    conn = get_conn()
+    rows = conn.execute(
+        "SELECT id, name, section FROM users WHERE class_name=? AND role='student' ORDER BY name",
+        (class_name,)
+    ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
 def get_class_progress(class_name: str) -> list[dict]:
     conn = get_conn()
     rows = conn.execute(
@@ -281,5 +292,94 @@ def get_class_progress(class_name: str) -> list[dict]:
            GROUP BY u.id ORDER BY u.name""",
         (class_name,)
     ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+# ── Admin ──────────────────────────────────────────────────────────────────────
+
+def login_admin(name: str, pin: str) -> dict | None:
+    conn = get_conn()
+    row = conn.execute(
+        "SELECT * FROM users WHERE name=? AND role='admin' AND pin_hash=?",
+        (name.strip(), hash_pin(pin))
+    ).fetchone()
+    conn.close()
+    return dict(row) if row else None
+
+def get_all_schools() -> list[dict]:
+    conn = get_conn()
+    rows = conn.execute("SELECT * FROM schools ORDER BY name").fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+def add_school(name: str, code: str) -> bool:
+    conn = get_conn()
+    try:
+        conn.execute("INSERT INTO schools (name, code) VALUES (?,?)", (name, code))
+        conn.commit()
+        conn.close()
+        return True
+    except Exception:
+        conn.close()
+        return False
+
+def get_all_users(role: str = None) -> list[dict]:
+    conn = get_conn()
+    if role:
+        rows = conn.execute(
+            "SELECT u.*, s.name as school_name FROM users u LEFT JOIN schools s ON u.school_id=s.id WHERE u.role=? ORDER BY u.class_name, u.name",
+            (role,)
+        ).fetchall()
+    else:
+        rows = conn.execute(
+            "SELECT u.*, s.name as school_name FROM users u LEFT JOIN schools s ON u.school_id=s.id ORDER BY u.role, u.class_name, u.name"
+        ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+def add_user(name: str, role: str, class_name: str, section: str, school_id: int, pin: str) -> bool:
+    conn = get_conn()
+    try:
+        conn.execute(
+            "INSERT OR IGNORE INTO users (name,role,class_name,section,school_id,pin_hash) VALUES (?,?,?,?,?,?)",
+            (name, role, class_name, section, school_id, hash_pin(pin))
+        )
+        conn.commit()
+        conn.close()
+        return True
+    except Exception:
+        conn.close()
+        return False
+
+def delete_user(user_id: int):
+    conn = get_conn()
+    conn.execute("DELETE FROM users WHERE id=?", (user_id,))
+    conn.commit()
+    conn.close()
+
+def upsert_lesson_full(lesson_id: str, class_name: str, subject: str, unit: str,
+                       title: str, youtube_id: str, playlist_id: str,
+                       duration_min: int, lesson_summary: str,
+                       opening_question: str, checkpoint_json: str):
+    conn = get_conn()
+    conn.execute("""
+        INSERT OR REPLACE INTO lessons
+        (id, class_name, subject, unit, title, youtube_id, playlist_id,
+         duration_min, lesson_summary, competencies, opening_question, checkpoint_json)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
+    """, (lesson_id, class_name, subject, unit, title, youtube_id, playlist_id,
+          duration_min, lesson_summary, "[]", opening_question, checkpoint_json))
+    conn.commit()
+    conn.close()
+
+def get_student_detail(student_id: int) -> list[dict]:
+    conn = get_conn()
+    rows = conn.execute("""
+        SELECT sp.*, l.title, l.subject, l.unit
+        FROM student_progress sp
+        JOIN lessons l ON sp.lesson_id = l.id
+        WHERE sp.student_id=? ORDER BY sp.id
+    """, (student_id,)).fetchall()
     conn.close()
     return [dict(r) for r in rows]
