@@ -31,7 +31,10 @@ def _get_api_key() -> str:
 
 
 def _lang(lesson: dict) -> str:
-    return "en" if (lesson.get("subject") or "").strip().lower() == "english" else "ta"
+    """Tamil subject always 'ta'; everything else uses the user's chosen lang."""
+    if (lesson.get("subject") or "").strip() == "தமிழ்":
+        return "ta"
+    return st.session_state.get("lang", "ta")
 
 
 def _msg_key(lesson_id: str) -> str:

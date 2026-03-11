@@ -94,17 +94,30 @@ SUBJECTS = {
     "Bridge Course":     {"icon": "🌉", "color": "#16A085", "key": "bridge"},
 }
 
-# ── Language helper ───────────────────────────────────────────────────────────
+# ── Language helpers ──────────────────────────────────────────────────────────
 
-def _lang(lesson: dict) -> str:
-    """Return 'en' for English subject, 'ta' for everything else."""
-    return "en" if (lesson.get("subject") or "").strip().lower() == "english" else "ta"
+def _ui_lang() -> str:
+    """Global UI language chosen by user at login ('en' or 'ta')."""
+    return st.session_state.get("lang", "ta")
+
+
+def _lang(lesson: dict = None) -> str:
+    """
+    Return language for a lesson context:
+    - Tamil subject → always 'ta' (regardless of user choice)
+    - Everything else → user's chosen language
+    """
+    if lesson and (lesson.get("subject") or "").strip() == "தமிழ்":
+        return "ta"
+    return _ui_lang()
+
 
 # ── Session state defaults ────────────────────────────────────────────────────
 
 def init_state():
     defaults = {
         "page": "login",
+        "lang": "ta",
         "user": None,
         "current_lesson_id": None,
         "current_subject": None,
@@ -130,65 +143,79 @@ def go(page: str, **kwargs):
 # ════════════════════════════════════════════════════════════════════
 
 def page_login():
+    lang = _ui_lang()
+
+    # ── Language toggle — top right ───────────────────────────────
+    _, col_toggle = st.columns([5, 1])
+    with col_toggle:
+        if lang == "ta":
+            if st.button("🌐 EN", use_container_width=True):
+                st.session_state["lang"] = "en"
+                st.rerun()
+        else:
+            if st.button("🌐 தமிழ்", use_container_width=True):
+                st.session_state["lang"] = "ta"
+                st.rerun()
+
     st.markdown(f"""
-    <div style='text-align:center;padding:40px 0 20px;'>
+    <div style='text-align:center;padding:20px 0 20px;'>
         <div style='font-size:64px;'>🎓</div>
         <h1 style='color:#1B4F8A;font-size:32px;margin:8px 0;'>கல்வி AI</h1>
-        <p style='color:#666;font-size:16px;'>{T("app_subtitle")} — {T("app_subtitle","ta")}</p>
+        <p style='color:#666;font-size:16px;'>{T("app_subtitle", lang)}</p>
         <p style='color:#888;font-size:14px;'>Govt. Higher Secondary School</p>
     </div>
     """, unsafe_allow_html=True)
 
-    tab_student, tab_teacher = st.tabs([T("student_tab"), T("teacher_tab")])
+    tab_student, tab_teacher = st.tabs([T("student_tab", lang), T("teacher_tab", lang)])
 
     with tab_student:
         st.markdown("<br>", unsafe_allow_html=True)
-        name = st.text_input(T("name_label"), placeholder=T("name_placeholder"))
+        name = st.text_input(T("name_label", lang), placeholder=T("name_placeholder", lang))
 
         col1, col2 = st.columns(2)
         with col1:
-            cls = st.selectbox(T("class_label"), ["8", "9"])
+            cls = st.selectbox(T("class_label", lang), ["8", "9"])
         with col2:
-            sec = st.selectbox(T("section_label"), ["A", "B"])
+            sec = st.selectbox(T("section_label", lang), ["A", "B"])
 
-        pin = st.text_input(T("pin_label"), type="password",
-                            placeholder=T("pin_placeholder"), max_chars=10)
+        pin = st.text_input(T("pin_label", lang), type="password",
+                            placeholder=T("pin_placeholder", lang), max_chars=10)
 
         st.markdown("<br>", unsafe_allow_html=True)
-        if st.button(T("login_btn"), use_container_width=True):
+        if st.button(T("login_btn", lang), use_container_width=True):
             if not name.strip():
-                st.error(T("name_required"))
+                st.error(T("name_required", lang))
             elif not pin:
-                st.error(T("pin_required"))
+                st.error(T("pin_required", lang))
             else:
                 user = login_user(name.strip(), cls, pin)
                 if user:
                     st.session_state["user"] = user
                     go("home")
                 else:
-                    st.error(T("invalid_login"))
+                    st.error(T("invalid_login", lang))
 
-        st.markdown("""
+        st.markdown(f"""
         <div style='text-align:center;color:#888;font-size:13px;margin-top:16px;'>
             Demo PIN: <b>1234</b><br>
-            Example: அர்ஜுன் (Class 8)
+            {"Example" if lang == "en" else "உதாரணம்"}: அர்ஜுன் ({"Class" if lang == "en" else "வகுப்பு"} 8)
         </div>
         """, unsafe_allow_html=True)
 
     with tab_teacher:
         st.markdown("<br>", unsafe_allow_html=True)
-        t_name = st.text_input(T("teacher_name_label"),
+        t_name = st.text_input(T("teacher_name_label", lang),
                                placeholder="ஆசிரியர் மீனா / ஆசிரியர் ரவி")
-        t_pin = st.text_input(T("password_label"), type="password",
+        t_pin = st.text_input(T("password_label", lang), type="password",
                               placeholder="Teacher PIN", max_chars=20)
         st.markdown("<br>", unsafe_allow_html=True)
-        if st.button(T("teacher_login_btn"), use_container_width=True):
+        if st.button(T("teacher_login_btn", lang), use_container_width=True):
             teacher = login_teacher(t_name.strip(), t_pin)
             if teacher:
                 st.session_state["user"] = teacher
                 go("teacher")
             else:
-                st.error(T("invalid_teacher"))
+                st.error(T("invalid_teacher", lang))
 
         st.markdown("""
         <div style='text-align:center;color:#888;font-size:13px;margin-top:16px;'>
@@ -202,6 +229,7 @@ def page_login():
 # ════════════════════════════════════════════════════════════════════
 
 def page_home():
+    lang     = _ui_lang()
     user     = st.session_state["user"]
     cls      = user["class_name"]
     progress = get_progress(user["id"])
@@ -225,9 +253,9 @@ def page_home():
 
     c1, c2, c3 = st.columns(3)
     for col, val, label, color in [
-        (c1, done_total,   T("lessons_done"), "#1B4F8A"),
-        (c2, turns_total,  T("ai_chats"),     "#FF6B35"),
-        (c3, len(badges),  T("badges"),       "#27AE60"),
+        (c1, done_total,   T("lessons_done", lang), "#1B4F8A"),
+        (c2, turns_total,  T("ai_chats", lang),     "#FF6B35"),
+        (c3, len(badges),  T("badges", lang),       "#27AE60"),
     ]:
         with col:
             st.markdown(f"""<div class='metric-card'>
@@ -244,19 +272,19 @@ def page_home():
 
     current_subject = st.session_state.get("current_subject")
     if current_subject is None:
-        _render_subject_grid(cls, completed_ids, touched_ids)
+        _render_subject_grid(cls, completed_ids, touched_ids, lang)
     else:
-        _render_chapter_list(user, cls, current_subject, completed_ids, touched_ids)
+        _render_chapter_list(user, cls, current_subject, completed_ids, touched_ids, lang)
 
     st.markdown("<br>")
-    if st.button(T("logout_btn")):
+    if st.button(T("logout_btn", lang)):
         for k in list(st.session_state.keys()):
             del st.session_state[k]
         go("login")
 
 
-def _render_subject_grid(cls: str, completed_ids: set, touched_ids: set):
-    st.markdown(f"### {T('choose_subject')}")
+def _render_subject_grid(cls: str, completed_ids: set, touched_ids: set, lang: str = "ta"):
+    st.markdown(f"### {T('choose_subject', lang)}")
 
     subject_list = list(SUBJECTS.items())
     for i in range(0, len(subject_list), 2):
@@ -280,17 +308,17 @@ def _render_subject_grid(cls: str, completed_ids: set, touched_ids: set):
                     <div style='font-size:16px;font-weight:700;color:#2C3E50;
                                 font-family:"Noto Sans Tamil",sans-serif;
                                 margin:6px 0 4px;'>{subj_label}</div>
-                    <div style='font-size:12px;color:#888;'>{total} {T("chapters")}</div>
+                    <div style='font-size:12px;color:#888;'>{total} {T("chapters", lang)}</div>
                     <div style='background:#F0F4F8;border-radius:6px;
                                 height:6px;margin:8px 0 4px;'>
                         <div style='background:{cfg["color"]};border-radius:6px;
                                     height:6px;width:{pct}%;'></div>
                     </div>
-                    <div style='font-size:11px;color:{cfg["color"]};'>{done}/{total} {T("done")}</div>
+                    <div style='font-size:11px;color:{cfg["color"]};'>{done}/{total} {T("done", lang)}</div>
                 </div>
                 """, unsafe_allow_html=True)
 
-                if st.button(f"{cfg['icon']} {T('open_btn')}",
+                if st.button(f"{cfg['icon']} {T('open_btn', lang)}",
                              key=f"subj_{cls}_{cfg['key']}",
                              use_container_width=True):
                     st.session_state["current_subject"] = subj_label
@@ -298,25 +326,25 @@ def _render_subject_grid(cls: str, completed_ids: set, touched_ids: set):
 
 
 def _render_chapter_list(user: dict, cls: str, subject: str,
-                         completed_ids: set, touched_ids: set):
+                         completed_ids: set, touched_ids: set, lang: str = "ta"):
     cfg = SUBJECTS.get(subject, {"icon": "📖", "color": "#1B4F8A"})
 
     col_back, col_title = st.columns([1, 5])
     with col_back:
-        if st.button(T("back_btn")):
+        if st.button(T("back_btn", lang)):
             st.session_state["current_subject"] = None
             st.rerun()
     with col_title:
         st.markdown(f"""
         <h2 style='color:{cfg["color"]};font-size:20px;margin:0;padding-top:4px;'>
-            {cfg["icon"]} {subject} — {T("class_label")} {cls}
+            {cfg["icon"]} {subject} — {T("class_label", lang)} {cls}
         </h2>""", unsafe_allow_html=True)
 
     st.markdown("<br>", unsafe_allow_html=True)
 
     lessons = get_lessons(cls, subject)
     if not lessons:
-        st.info(T("no_chapters"))
+        st.info(T("no_chapters", lang))
         return
 
     terms: dict[str, list] = {}
@@ -325,7 +353,7 @@ def _render_chapter_list(user: dict, cls: str, subject: str,
         terms.setdefault(t, []).append(l)
 
     for term_label, chapters in terms.items():
-        with st.expander(f"📂 {term_label}  ({len(chapters)} {T('chapters')})",
+        with st.expander(f"📂 {term_label}  ({len(chapters)} {T('chapters', lang)})",
                          expanded=(term_label == list(terms.keys())[0])):
             for ch in chapters:
                 lid      = ch["id"]
@@ -395,7 +423,7 @@ def page_lesson():
         return
 
     stage = st.session_state.get("lesson_stage", "video")
-    lang  = _lang(lesson)
+    lang  = _lang(lesson)   # 'ta' for Tamil subject, else user's chosen lang
 
     col_back, col_title = st.columns([1, 5])
     with col_back:
@@ -494,7 +522,7 @@ def page_summary():
     user      = st.session_state["user"]
     lesson_id = st.session_state.get("current_lesson_id")
     lesson    = get_lesson(lesson_id) if lesson_id else None
-    lang      = _lang(lesson) if lesson else "en"
+    lang      = _lang(lesson) if lesson else _ui_lang()
 
     st.markdown(f"""
     <div style='text-align:center;padding:30px 0;'>
@@ -543,24 +571,25 @@ def page_summary():
 # ════════════════════════════════════════════════════════════════════
 
 def page_teacher():
+    lang = _ui_lang()
     user = st.session_state["user"]
 
     st.markdown(f"""
     <div style='background:linear-gradient(135deg,#1B4F8A,#154360);
                 color:white;padding:20px;border-radius:12px;margin-bottom:20px;'>
-        <h2 style='margin:0;font-size:22px;'>🏫 Teacher Dashboard</h2>
+        <h2 style='margin:0;font-size:22px;'>🏫 {"Teacher Dashboard" if lang == "en" else "ஆசிரியர் பலகை"}</h2>
         <p style='margin:4px 0 0;opacity:0.85;'>{user['name']}</p>
     </div>
     """, unsafe_allow_html=True)
 
-    class_tab8, class_tab9 = st.tabs(["Class 8A", "Class 9A"])
+    class_tab8, class_tab9 = st.tabs([f"{T('class_label', lang)} 8A", f"{T('class_label', lang)} 9A"])
 
     for tab, cls in [(class_tab8, "8"), (class_tab9, "9")]:
         with tab:
             progress_list = get_class_progress(cls)
 
             if not progress_list:
-                st.info("No students yet")
+                st.info("No students yet" if lang == "en" else "மாணவர்கள் இல்லை")
                 continue
 
             total_students = len(progress_list)
@@ -568,15 +597,15 @@ def page_teacher():
 
             col1, col2, col3 = st.columns(3)
             with col1:
-                st.metric("Total Students", total_students)
+                st.metric("Total Students" if lang == "en" else "மொத்த மாணவர்கள்", total_students)
             with col2:
-                st.metric("Active", active)
+                st.metric("Active" if lang == "en" else "செயல்பாட்டில்", active)
             with col3:
                 avg_done = sum((p.get("lessons_done") or 0) for p in progress_list) / max(total_students, 1)
-                st.metric("Avg Lessons", f"{avg_done:.1f}")
+                st.metric("Avg Lessons" if lang == "en" else "சராசரி பாடங்கள்", f"{avg_done:.1f}")
 
             st.markdown("<br>", unsafe_allow_html=True)
-            st.markdown("**Student Progress:**")
+            st.markdown(f"**{'Student Progress' if lang == 'en' else 'மாணவர் முன்னேற்றம்'}:**")
 
             for p in progress_list:
                 done  = p.get("lessons_done") or 0
@@ -599,7 +628,7 @@ def page_teacher():
                 """, unsafe_allow_html=True)
 
     st.markdown("<br>")
-    if st.button("Logout"):
+    if st.button(T("logout_btn", lang)):
         for key in list(st.session_state.keys()):
             del st.session_state[key]
         go("login")
