@@ -146,16 +146,28 @@ def page_login():
     lang = _ui_lang()
 
     # ── Language toggle — top right ───────────────────────────────
-    _, col_toggle = st.columns([5, 1])
+    toggle_label = "🌐 EN" if lang == "ta" else "🌐 தமிழ்"
+    toggle_target = "en" if lang == "ta" else "ta"
+
+    st.markdown(f"""
+    <style>
+    div[data-testid="stHorizontalBlock"]:first-of-type div[data-testid="stButton"] button {{
+        background: white !important;
+        color: #1B4F8A !important;
+        border: 2px solid #1B4F8A !important;
+        font-size: 14px !important;
+        padding: 4px 12px !important;
+        border-radius: 20px !important;
+        font-weight: 600 !important;
+    }}
+    </style>
+    """, unsafe_allow_html=True)
+
+    col_space, col_toggle = st.columns([5, 1])
     with col_toggle:
-        if lang == "ta":
-            if st.button("🌐 EN", use_container_width=True):
-                st.session_state["lang"] = "en"
-                st.rerun()
-        else:
-            if st.button("🌐 தமிழ்", use_container_width=True):
-                st.session_state["lang"] = "ta"
-                st.rerun()
+        if st.button(toggle_label, key="lang_toggle", use_container_width=True):
+            st.session_state["lang"] = toggle_target
+            st.rerun()
 
     st.markdown(f"""
     <div style='text-align:center;padding:20px 0 20px;'>
