@@ -1,1 +1,1 @@
-web: cd AITutor && streamlit run streamlit_app.py --server.port $PORT --server.address 0.0.0.0
+web: cd AITutor && streamlit run streamlit_app.py --server.port $PORT --server.address 0.0.0.0 --theme.primaryColor "#2563EB" --theme.backgroundColor "#F0F7FF" --theme.secondaryBackgroundColor "#DBEAFE" --theme.textColor "#1E293B"

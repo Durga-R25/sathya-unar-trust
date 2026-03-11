@@ -53,18 +53,20 @@ html, body, [class*="css"] {
     font-size: 16px;
     background-color: #F0F7FF;
 }
-.stButton > button {
-    background-color: #2563EB;
-    color: white;
-    border: none;
-    border-radius: 10px;
-    font-family: 'Noto Sans Tamil', sans-serif;
-    font-size: 16px;
-    padding: 8px 20px;
-    transition: background 0.2s;
+.stButton > button,
+button[kind="primary"], button[kind="secondary"] {
+    background-color: #2563EB !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 10px !important;
+    font-family: 'Noto Sans Tamil', sans-serif !important;
+    font-size: 16px !important;
+    padding: 8px 20px !important;
+    transition: background 0.2s !important;
 }
-.stButton > button:hover {
-    background-color: #1D4ED8;
+.stButton > button:hover,
+button[kind="primary"]:hover {
+    background-color: #1D4ED8 !important;
 }
 .stTextInput > div > input {
     font-family: 'Noto Sans Tamil', sans-serif;
