@@ -36,7 +36,7 @@ Audio transcription tool with translation capabilities.
 ArivAI (அறிவு AI) — a Khanmigo-inspired AI tutoring platform for Tamil Nadu government school students (Class 8 & 9). Bilingual Tamil + English, mobile-first, with voice chat, Socratic AI tutor (Kalvi), lesson editor, progress tracking, and admin panel. Deployed live on Railway.
 
 **Key Features:**
-- 🤖 Kalvi AI — Socratic tutor, never gives direct answers, guardrailed to lesson content
+- 🤖 Avvai AI — Socratic tutor character (named after Avvaiyar), never gives direct answers, guardrailed to lesson content
 - 🎤 Voice input — Tamil (`ta-IN`) and English speech-to-text in the chat
 - 📹 Video lessons via KalviTV YouTube, with mid-lesson checkpoint MCQs
 - 📝 AI-generated evaluation: MCQs + essay with AI grading

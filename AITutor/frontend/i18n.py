@@ -59,7 +59,7 @@ _STRINGS = {
     "lesson_completed":   {"en": "✅ Lesson Completed:",           "ta": "✅ முடிந்த பாடம்:"},
     "your_badges":        {"en": "🏅 Your Badges",                "ta": "🏅 உன் சாதனைகள்"},
     "home_btn":           {"en": "🏠 Home",                       "ta": "🏠 முகப்பு பக்கம்"},
-    "chat_again_btn":     {"en": "🤖 Chat with AI again",         "ta": "🤖 மீண்டும் AI உடன் பேசு"},
+    "chat_again_btn":     {"en": "🤖 Chat with Avvai again",      "ta": "🤖 மீண்டும் அவ்வையுடன் பேசு"},
 
     # ── Voice ────────────────────────────────────────────────────
     "voice_btn":          {"en": "🎤 Voice",                        "ta": "🎤 குரல்"},
@@ -78,7 +78,7 @@ _STRINGS = {
     "turns_label":        {"en": "Turns with AI",                 "ta": "AI உடன் பேசிய முறை"},
     "chat_placeholder":   {"en": "Type your answer here... (Press Enter to send)",
                            "ta": "உன் எண்ணத்தை இங்கே எழுது... (Enter அழுத்தி அனுப்பு)"},
-    "ai_thinking":        {"en": "Kalvi is thinking...",          "ta": "கல்வி யோசிக்கிறது..."},
+    "ai_thinking":        {"en": "Avvai is thinking...",          "ta": "அவ்வை யோசிக்கிறது..."},
     "go_eval_btn":        {"en": "📝 Go to Evaluation",           "ta": "📝 மதிப்பீட்டிற்கு செல்"},
     "new_badge":          {"en": "🏅 New Badge: Curious Learner!","ta": "🏅 புதிய சாதனை: ஆர்வமுள்ள மாணவன்!"},
     "curious_badge":      {"en": "Curious Learner 🌟",            "ta": "ஆர்வமுள்ள மாணவன் 🌟"},
@@ -100,8 +100,8 @@ _STRINGS = {
     "essay_placeholder":  {"en": "Write in your own words...",    "ta": "உன் சொந்த வார்த்தைகளில் எழுது..."},
     "word_count":         {"en": "words",                         "ta": "வார்த்தைகள்"},
     "submit_essay":       {"en": "📤 Submit Essay",               "ta": "📤 கட்டுரை சமர்ப்பி"},
-    "evaluating":         {"en": "Kalvi AI is reading your answer...",
-                           "ta": "கல்வி AI உன் பதிலை படிக்கிறது..."},
+    "evaluating":         {"en": "Avvai is reading your answer...",
+                           "ta": "அவ்வை உன் பதிலை படிக்கிறது..."},
     "fb_strengths":       {"en": "👍 Strengths:",                 "ta": "👍 நன்மைகள்:"},
     "fb_improve":         {"en": "💡 Improve:",                   "ta": "💡 மேம்படுத்த:"},
     "fb_overall":         {"en": "🌟 Overall:",                   "ta": "🌟 ஒட்டுமொத்த கருத்து:"},

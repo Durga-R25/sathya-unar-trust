@@ -14,7 +14,7 @@ A Khanmigo-inspired AI tutoring platform for Tamil Nadu government school studen
 
 ### For Students
 - 📹 **Video Lessons** — Embedded KalviTV YouTube videos, lesson-specific
-- 🤖 **AI Tutor (Kalvi)** — Socratic AI tutor, never gives direct answers; always guides with questions
+- 🤖 **AI Tutor (Avvai)** — Socratic AI tutor, never gives direct answers; always guides with questions
 - 🎤 **Voice Chat** — Speak in Tamil or English; auto-transcribed and sent to ArivAI
 - 📝 **Checkpoints** — MCQ questions mid-lesson before AI chat unlocks
 - 📊 **Evaluation** — Auto-generated MCQ + essay after every lesson, AI-graded
@@ -35,9 +35,9 @@ A Khanmigo-inspired AI tutoring platform for Tamil Nadu government school studen
 
 ---
 
-## 🤖 AI Tutor — Kalvi (கல்வி)
+## 🤖 AI Tutor — Avvai (அவ்வை)
 
-Kalvi is a Socratic AI tutor inspired by Khan Academy's Khanmigo:
+Avvai is a Socratic AI tutor inspired by Khan Academy's Khanmigo, named after Avvaiyar — the ancient Tamil poetess who taught children wisdom through simple verses (Aathichudi, Konraivendhan):
 
 - **Tamil-only** for Tamil subject; **bilingual** for Science, Maths, Social, English
 - **Never gives direct answers** — always redirects with a follow-up question
@@ -173,7 +173,7 @@ AITutor/
 Watch KalviTV  →  Checkpoint MCQ    →     3 MCQ questions
 YouTube video     (must pass)             1 Essay question
                   ↓                       AI-graded feedback
-                  AI Chat (Kalvi)         Lesson Complete badge
+                  AI Chat (Avvai)         Lesson Complete badge
                   Voice or text input
 ```
 
@@ -208,7 +208,7 @@ web: cd AITutor && streamlit run streamlit_app.py --server.port $PORT --server.a
 - Login page (Student / Teacher / Admin tabs) with language toggle
 - Home screen with subject cards and chapter list
 - Video lesson page with KalviTV embed
-- Khanmigo-style AI chat (Kalvi) — Tamil + English
+- Khanmigo-style AI chat (Avvai) — Tamil + English
 - AI guardrails — restricted to current lesson
 - MCQ + Essay evaluation with AI grading
 - Effort-based badges

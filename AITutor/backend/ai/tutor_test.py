@@ -60,7 +60,7 @@ def test_tutor_conversation():
     ]
 
     print("=" * 60)
-    print("AITutor - Tamil Tutor Test")
+    print("ArivAI - Avvai Tutor Test")
     print("Lesson: நீர் — உயிரின் அடிப்படை (Class 8)")
     print("=" * 60)
 
@@ -78,7 +78,7 @@ def test_tutor_conversation():
         "உன் வீட்டில் தினமும் எவ்வளவு தண்ணீர் செலவாகும் என்று "
         "யோசித்திருக்கிறாயா?"
     )
-    log(f"\n[கல்வி AI]:\n{opening}\n")
+    log(f"\n[Avvai]:\n{opening}\n")
     conversation_history.append({"role": "assistant", "content": opening})
 
     for student_input in test_messages:
@@ -93,7 +93,7 @@ def test_tutor_conversation():
         )
 
         ai_response = response.content[0].text
-        log(f"[கல்வி AI]:\n{ai_response}\n")
+        log(f"[Avvai]:\n{ai_response}\n")
         log("-" * 40)
 
         conversation_history.append({"role": "assistant", "content": ai_response})
@@ -157,7 +157,7 @@ def test_incorrect_answer_handling():
         print(text)
         output_lines.append(text)
 
-    log(f"\n[கல்வி AI]:\n{conversation[0]['content']}\n")
+    log(f"\n[Avvai]:\n{conversation[0]['content']}\n")
     log(f"[மாணவர்]: {conversation[1]['content']}\n")
 
     response = client.messages.create(
@@ -167,7 +167,7 @@ def test_incorrect_answer_handling():
         messages=conversation
     )
 
-    log(f"[கல்வி AI]:\n{response.content[0].text}\n")
+    log(f"[Avvai]:\n{response.content[0].text}\n")
     log("\nCheck: Did AI encourage first before correcting?")
     log("Check: Did AI guide thinking rather than give the answer?")
 
@@ -190,7 +190,7 @@ def _write_output_file(filename: str, lines: list):
 
 
 if __name__ == "__main__":
-    print("Running AITutor Tamil Prompt Tests...\n")
+    print("Running ArivAI Avvai Prompt Tests...\n")
     test_tutor_conversation()
     print("\n" + "=" * 60 + "\n")
     test_incorrect_answer_handling()

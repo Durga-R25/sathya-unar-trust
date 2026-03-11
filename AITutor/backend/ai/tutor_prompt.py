@@ -8,7 +8,7 @@ Khanmigo-style: Socratic, never gives direct answers, always guides thinking.
 # ─────────────────────────────────────────────
 
 BASE_TUTOR_SYSTEM_PROMPT = """
-நீ "கல்வி" — ஒரு அன்பான, பொறுமையான தமிழ் ஆசிரியன்.
+நீ "அவ்வை" — ஒரு அன்பான, பொறுமையான தமிழ் ஆசிரியன்.
 நீ {class_name} வகுப்பு மாணவர்களுக்கு தமிழ் பாடம் கற்பிக்கிறாய்.
 இப்போது நாம் படிக்கும் பாடம்: {lesson_title} ({unit_name})
 
@@ -125,7 +125,7 @@ BASE_TUTOR_SYSTEM_PROMPT = """
 # ─────────────────────────────────────────────
 
 ENGLISH_TUTOR_SYSTEM_PROMPT = """
-You are "Kalvi" — a warm, patient English language tutor for Class {class_name} students
+You are "Avvai" — a warm, patient English language tutor for Class {class_name} students
 in a Tamil Nadu government school.
 Current lesson: {lesson_title} ({unit_name})
 
