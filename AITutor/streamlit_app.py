@@ -294,7 +294,7 @@ def page_home():
     else:
         _render_chapter_list(user, cls, current_subject, completed_ids, touched_ids, lang)
 
-    st.markdown("<br>")
+    st.markdown("<br>", unsafe_allow_html=True)
     if st.button(T("logout_btn", lang)):
         for k in list(st.session_state.keys()):
             del st.session_state[k]
@@ -645,7 +645,7 @@ def page_teacher():
                 </div>
                 """, unsafe_allow_html=True)
 
-    st.markdown("<br>")
+    st.markdown("<br>", unsafe_allow_html=True)
     if st.button(T("logout_btn", lang)):
         for key in list(st.session_state.keys()):
             del st.session_state[key]
