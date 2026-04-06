@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, where, getDocs, orderBy, doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, where, getDocs, orderBy, doc, getDoc, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from './config/firebase';
 import { UserProvider, useUser } from './context/UserContext';
 import { canUploadVideo, canAccessAdminPanel } from './services/authService';
@@ -82,9 +82,18 @@ const AppContent = () => {
 
   // ─── Update & Force-Logout helpers ───────────────────────────────────────────
 
-  // Countdown banner → logout → clear → store survival keys in sessionStorage → reload
-  // Uses bundleHash as the processed-ID so clock-drift can't cause re-trigger loops.
+  // Countdown banner → logout once → clear caches → reload
+  // Uses bundleHash as the processed-ID so only ONE logout fires per update.
   const startForceLogout = (message, bundleHash) => {
+    // Prevent duplicate triggers for the same bundle (e.g. both checkForUpdate + checkForceLogout firing)
+    if (bundleHash) {
+      const alreadyProcessed = sessionStorage.getItem('processedUpdateId') || localStorage.getItem('processedUpdateId');
+      if (alreadyProcessed === bundleHash) return;
+      // Mark immediately — before countdown — so any concurrent call exits early
+      sessionStorage.setItem('processedUpdateId', bundleHash);
+      localStorage.setItem('processedUpdateId', bundleHash);
+    }
+
     setUpdateBanner({ text: message, secs: 5 });
     let secs = 5;
     const tick = setInterval(() => {
@@ -94,13 +103,8 @@ const AppContent = () => {
         clearInterval(tick);
         (async () => {
           try { await logout(); } catch (_) {}
-          localStorage.clear();
-          sessionStorage.clear();
-          // Re-set AFTER clearing so these survive the reload (sessionStorage persists across reload)
-          if (bundleHash) sessionStorage.setItem('processedUpdateId', bundleHash);
-          sessionStorage.setItem('pendingUpdateNotif', JSON.stringify({
-            message, time: new Date().toISOString()
-          }));
+          // Set appBundle to new version so checkForUpdate won't re-trigger after reload
+          if (bundleHash) localStorage.setItem('appBundle', bundleHash);
           if ('caches' in window) {
             const names = await caches.keys();
             await Promise.all(names.map(n => caches.delete(n)));
@@ -119,6 +123,13 @@ const AppContent = () => {
         const manifest = await res.json();
         const currentBundle = manifest.files?.['main.js'];
         if (!currentBundle) return;
+
+        // Skip if we already processed this bundle (prevents re-trigger after reload)
+        const processedId = sessionStorage.getItem('processedUpdateId') || localStorage.getItem('processedUpdateId');
+        if (processedId === currentBundle) {
+          localStorage.setItem('appBundle', currentBundle);
+          return;
+        }
 
         const cachedBundle = localStorage.getItem('appBundle');
         if (cachedBundle && cachedBundle !== currentBundle) {
@@ -274,6 +285,23 @@ const AppContent = () => {
     }
   };
 
+  // Dismiss a single notification (deletes from Firestore + local state)
+  const handleDismissNotification = async (notification) => {
+    setNotifications(prev => prev.filter(n => n.id !== notification.id));
+    setUnreadCount(prev => Math.max(0, prev - (notification.read ? 0 : 1)));
+    if (!notification.isSystem) {
+      try { await deleteDoc(doc(db, 'notifications', notification.id)); } catch (_) {}
+    }
+  };
+
+  // Clear all notifications
+  const handleClearAllNotifications = async () => {
+    const toDelete = notifications.filter(n => !n.isSystem);
+    setNotifications([]);
+    setUnreadCount(0);
+    await Promise.all(toDelete.map(n => deleteDoc(doc(db, 'notifications', n.id)).catch(() => {})));
+  };
+
   // Convert a Firestore Timestamp (or any date-like value) to an ISO string.
   // Returns null if the value is missing or unreadable.
   const toISOString = (val) => {
@@ -295,29 +323,15 @@ const AppContent = () => {
         orderBy('createdAt', 'desc')
       );
       const snapshot = await getDocs(videosQuery);
+
       const videosList = snapshot.docs.map(doc => {
         const data = doc.data();
-
-        // Log raw Firestore fields once (first video) so field names are visible in browser console
-        if (snapshot.docs[0].id === doc.id) {
-          console.log('[ScienceVerse] First video raw Firestore fields:', Object.keys(data));
-          console.log('[ScienceVerse] First video data sample:', {
-            uploaderSchool: data.uploaderSchool,
-            schoolName: data.schoolName,
-            duration: data.duration,
-            uploadedAt: data.uploadedAt,
-            createdAt: data.createdAt,
-          });
-        }
-
         return {
           ...data,
           id: doc.id,
           videoId: data.videoId,
           fileUrl: data.videoUrl,
-          // Normalise school name — field was 'uploaderSchool' in UploadScreen
           schoolName: data.uploaderSchool || data.schoolName || '',
-          // Convert Firestore Timestamps to ISO strings so components use plain strings
           uploadedAt: toISOString(data.uploadedAt) || toISOString(data.createdAt),
           createdAt: toISOString(data.createdAt),
           approvedAt: toISOString(data.approvedAt),
@@ -489,6 +503,11 @@ const AppContent = () => {
           </div>
           <div className="header-actions">
             <img src="/logos/SUS Logo.jpg" alt="SUS" className="header-org-logo" />
+            {(currentUser?.role?.toLowerCase() === 'teacher' || currentUser?.role?.toLowerCase() === 'admin') && (
+              <button className="notification-button" onClick={() => setShowStudentSearch(true)} title="Search Students">
+                👨‍🎓
+              </button>
+            )}
             <button className="notification-button" onClick={() => setShowNotifications(!showNotifications)}>
               🔔
               {unreadCount > 0 && (
@@ -507,7 +526,18 @@ const AppContent = () => {
               <div className="notifications-dropdown">
                 <div className="notifications-header">
                   <h4>Notifications</h4>
-                  <button className="close-notifications" onClick={() => setShowNotifications(false)}>✕</button>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    {notifications.length > 0 && (
+                      <button
+                        onClick={handleClearAllNotifications}
+                        style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '12px', cursor: 'pointer', fontWeight: 600 }}
+                        title="Clear all notifications"
+                      >
+                        Clear all
+                      </button>
+                    )}
+                    <button className="close-notifications" onClick={() => setShowNotifications(false)}>✕</button>
+                  </div>
                 </div>
                 <div className="notifications-list">
                   {notifications.length === 0 ? (
@@ -518,14 +548,20 @@ const AppContent = () => {
                   ) : (
                     notifications.slice(0, 5).map(notification => (
                       <div key={notification.id} className="notification-item" style={{
-                        background: !notification.read ? '#f0f9ff' : 'transparent'
+                        background: !notification.read ? '#f0f9ff' : 'transparent',
+                        display: 'flex', alignItems: 'flex-start', gap: '8px'
                       }}>
                         <span className="notification-icon">{notification.icon || '📢'}</span>
-                        <div className="notification-content">
+                        <div className="notification-content" style={{ flex: 1 }}>
                           <strong>{notification.title}</strong>
                           <p>{notification.message}</p>
                           <small>{getTimeAgo(notification.createdAt)}</small>
                         </div>
+                        <button
+                          onClick={() => handleDismissNotification(notification)}
+                          style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: '16px', cursor: 'pointer', flexShrink: 0, lineHeight: 1, padding: '2px 4px' }}
+                          title="Dismiss"
+                        >✕</button>
                       </div>
                     ))
                   )}
@@ -650,6 +686,7 @@ const AppContent = () => {
           onClose={() => {
             setShowAdminPanel(false);
             setCurrentTab('home');
+            loadVideos(); // Refresh videos in case school/user names were edited
           }}
         />
       )}
@@ -688,11 +725,19 @@ const AppContent = () => {
               <h3 style={{ margin: 0, color: 'white', fontSize: '20px', fontWeight: 700 }}>
                 🔔 All Notifications
               </h3>
-              <button onClick={() => setShowAllNotifications(false)} style={{
-                background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: '50%',
-                width: '32px', height: '32px', color: 'white', fontSize: '18px',
-                cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center'
-              }}>✕</button>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                {notifications.length > 0 && (
+                  <button onClick={handleClearAllNotifications} style={{
+                    background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: '8px',
+                    padding: '4px 10px', color: 'white', fontSize: '12px', fontWeight: 600, cursor: 'pointer'
+                  }}>Clear all</button>
+                )}
+                <button onClick={() => setShowAllNotifications(false)} style={{
+                  background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: '50%',
+                  width: '32px', height: '32px', color: 'white', fontSize: '18px',
+                  cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center'
+                }}>✕</button>
+              </div>
             </div>
             <div style={{ overflowY: 'auto', flex: 1 }}>
               {notifications.length === 0 ? (
@@ -705,10 +750,11 @@ const AppContent = () => {
                   <div key={notification.id} style={{
                     display: 'flex', gap: '12px', padding: '16px 20px',
                     borderBottom: '1px solid #e2e8f0',
-                    background: !notification.read ? '#f0f9ff' : 'transparent'
+                    background: !notification.read ? '#f0f9ff' : 'transparent',
+                    alignItems: 'flex-start'
                   }}>
                     <span style={{ fontSize: '24px', flexShrink: 0 }}>{notification.icon || '📢'}</span>
-                    <div>
+                    <div style={{ flex: 1 }}>
                       <strong style={{ display: 'block', color: '#1e293b', fontSize: '14px' }}>
                         {notification.title}
                       </strong>
@@ -719,6 +765,11 @@ const AppContent = () => {
                         {getTimeAgo(notification.createdAt)}
                       </small>
                     </div>
+                    <button
+                      onClick={() => handleDismissNotification(notification)}
+                      style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: '18px', cursor: 'pointer', flexShrink: 0, lineHeight: 1, padding: '2px 4px' }}
+                      title="Dismiss"
+                    >✕</button>
                   </div>
                 ))
               )}
@@ -750,16 +801,6 @@ const AppContent = () => {
         </div>
       )}
 
-      {/* Floating Action Button for Teachers */}
-      {currentUser.role && currentUser.role.toLowerCase() === 'teacher' && !showStudentSearch && (
-        <button
-          className="fab"
-          onClick={() => setShowStudentSearch(true)}
-          title="Search Students"
-        >
-          🔍
-        </button>
-      )}
     </div>
   );
 };
