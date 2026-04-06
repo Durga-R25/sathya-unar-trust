@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { collection, query, where, getDocs, doc, deleteDoc, updateDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, deleteDoc, updateDoc, writeBatch, setDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { deleteStudentAccount, updateStudentAccount } from '../services/authService';
 import CreateStudentScreen from './CreateStudentScreen';
@@ -21,6 +21,8 @@ const StudentSearch = ({ currentUser }) => {
   const [editFormData, setEditFormData] = useState({});
   const [showStats, setShowStats] = useState(false);
   const [stats, setStats] = useState(null);
+  const [resetMessage, setResetMessage] = useState('');
+  const [isResetting, setIsResetting] = useState(false);
 
   const isAdmin = currentUser?.role?.toLowerCase() === 'admin';
   const isTeacher = currentUser?.role?.toLowerCase() === 'teacher';
@@ -238,9 +240,30 @@ const StudentSearch = ({ currentUser }) => {
     }
   };
 
+  // Regenerate activation code for pending students
+  const handleRegenerateCode = async () => {
+    if (selectedStudent.status !== 'pending') return;
+    setIsResetting(true);
+    setResetMessage('');
+    try {
+      const newCode = Math.floor(100000 + Math.random() * 900000).toString();
+      await updateDoc(doc(db, 'pendingActivations', selectedStudent.id), { activationCode: newCode });
+      setSearchResults(searchResults.map(s =>
+        s.id === selectedStudent.id ? { ...s, activationCode: newCode } : s
+      ));
+      setSelectedStudent(prev => ({ ...prev, activationCode: newCode }));
+      setResetMessage(`New activation code: ${newCode} — share this with the student.`);
+    } catch (err) {
+      setResetMessage('Failed to regenerate code: ' + err.message);
+    } finally {
+      setIsResetting(false);
+    }
+  };
+
   // Handle edit
   const handleEdit = (student) => {
     setSelectedStudent(student);
+    setResetMessage('');
     setEditFormData({
       name: student.name,
       class: student.class,
@@ -252,17 +275,38 @@ const StudentSearch = ({ currentUser }) => {
 
   const handleEditSave = async () => {
     try {
+      const nameChanged = editFormData.name !== selectedStudent.name;
+      const schoolChanged = editFormData.schoolName !== selectedStudent.schoolName;
+
       if (selectedStudent.status === 'activated') {
         await updateStudentAccount(selectedStudent.id, editFormData);
+
+        // Propagate name/school changes to all the student's videos
+        if (nameChanged || schoolChanged) {
+          const videosSnap = await getDocs(
+            query(collection(db, 'videos'), where('uploaderId', '==', selectedStudent.id))
+          );
+          if (!videosSnap.empty) {
+            const batch = writeBatch(db);
+            videosSnap.forEach(v => {
+              const updates = {};
+              if (nameChanged) updates.uploaderName = editFormData.name;
+              if (schoolChanged) {
+                updates.uploaderSchool = editFormData.schoolName;
+                updates.schoolName = editFormData.schoolName;
+              }
+              batch.update(v.ref, updates);
+            });
+            await batch.commit();
+          }
+        }
       } else {
         await updateDoc(doc(db, 'pendingActivations', selectedStudent.id), editFormData);
       }
 
-      // Update in search results
       setSearchResults(searchResults.map(s =>
         s.id === selectedStudent.id ? { ...s, ...editFormData } : s
       ));
-
       setSelectedStudent(null);
       alert('Student updated successfully');
     } catch (error) {
@@ -331,9 +375,38 @@ const StudentSearch = ({ currentUser }) => {
             />
           </div>
 
+          {/* Password Reset Section */}
+          <div style={{ borderTop: '1px solid rgba(148,163,184,0.2)', marginTop: '16px', paddingTop: '16px' }}>
+            <label style={{ fontWeight: 600, display: 'block', marginBottom: '8px' }}>🔑 Password Reset</label>
+            {selectedStudent.status === 'pending' ? (
+              <>
+                <div style={{ fontSize: '13px', color: '#94a3b8', marginBottom: '8px' }}>
+                  Current activation code: <strong style={{ color: '#f1f5f9' }}>{selectedStudent.activationCode || '—'}</strong>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleRegenerateCode}
+                  disabled={isResetting}
+                  style={{ background: '#f59e0b', color: 'white', border: 'none', borderRadius: '8px', padding: '9px 14px', fontWeight: 600, cursor: 'pointer', fontSize: '13px' }}
+                >
+                  {isResetting ? 'Generating...' : '🔄 Regenerate Activation Code'}
+                </button>
+              </>
+            ) : (
+              <div style={{ fontSize: '13px', color: '#94a3b8', background: 'rgba(148,163,184,0.1)', borderRadius: '8px', padding: '10px 12px' }}>
+                Student passwords use internal login (no email). To reset, delete this student account and recreate it — the student will receive a new activation code.
+              </div>
+            )}
+            {resetMessage && (
+              <div style={{ marginTop: '8px', background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(16,185,129,0.3)', borderRadius: '8px', padding: '10px 14px', color: '#10b981', fontSize: '13px' }}>
+                ✅ {resetMessage}
+              </div>
+            )}
+          </div>
+
           <div className="form-actions">
             <button className="save-button" onClick={handleEditSave}>Save Changes</button>
-            <button className="cancel-button" onClick={() => setSelectedStudent(null)}>Cancel</button>
+            <button className="cancel-button" onClick={() => { setSelectedStudent(null); setResetMessage(''); }}>Cancel</button>
           </div>
         </div>
       </div>

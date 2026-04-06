@@ -24,6 +24,8 @@ const LoginScreen = ({ onLoginSuccess }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [showActivation, setShowActivation] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [resetInput, setResetInput] = useState('');
+  const [resetSuccess, setResetSuccess] = useState('');
 
   const roles = [
     { id: 'student', name: 'Student', icon: '🎓', description: 'Class 7-9 participant' },
@@ -163,10 +165,9 @@ const LoginScreen = ({ onLoginSuccess }) => {
   const handleForgotPassword = async (e) => {
     e.preventDefault();
     setError('');
+    setResetSuccess('');
 
-    const emailOrSchoolId = selectedRole === 'student' ? formData.schoolId : formData.email;
-
-    if (!emailOrSchoolId.trim()) {
+    if (!resetInput.trim()) {
       setError(selectedRole === 'student' ? 'Please enter your School ID' : 'Please enter your email');
       return;
     }
@@ -174,18 +175,28 @@ const LoginScreen = ({ onLoginSuccess }) => {
     setIsLoading(true);
 
     try {
-      const result = await sendPasswordReset(emailOrSchoolId);
-
-      if (result.success) {
-        alert(result.message);
-        setShowForgotPassword(false);
-        setIsLoading(false);
-      }
-    } catch (error) {
-      console.error('Password reset error:', error);
-      setError(error.message || 'Failed to send password reset email.');
+      const result = await sendPasswordReset(resetInput.trim());
+      setResetSuccess(result.message);
+      setIsLoading(false);
+    } catch (err) {
+      console.error('Password reset error:', err);
+      setError(err.message || 'Failed to send password reset.');
       setIsLoading(false);
     }
+  };
+
+  const openForgotPassword = () => {
+    setResetInput('');
+    setResetSuccess('');
+    setError('');
+    setShowForgotPassword(true);
+  };
+
+  const closeForgotPassword = () => {
+    setShowForgotPassword(false);
+    setResetInput('');
+    setResetSuccess('');
+    setError('');
   };
 
   const handleSchoolRegistration = () => {
@@ -269,7 +280,6 @@ const LoginScreen = ({ onLoginSuccess }) => {
     <div className="login-screen">
       {/* Organization Logos */}
       <div className="org-logos">
-        <img src="/logos/rathnaschool.png" alt="Rathnaschool" className="org-logo org-logo-left" />
         <img src="/logos/SUS Logo.jpg" alt="SUS Logo" className="org-logo org-logo-right" />
       </div>
 
@@ -280,7 +290,7 @@ const LoginScreen = ({ onLoginSuccess }) => {
                ScienceVerse
              </h1>
              <p className="login-subtitle">
-               Tenkasi District Science Competition 2026
+               Sathya Unar Charitable Trust - Innovation Science Hub
             <br />
             Select your role and login to continue
             </p>
@@ -335,7 +345,7 @@ const LoginScreen = ({ onLoginSuccess }) => {
           <button
             type="button"
             className="forgot-password"
-            onClick={() => setShowForgotPassword(!showForgotPassword)}
+            onClick={openForgotPassword}
           >
             Forgot password?
           </button>
@@ -377,6 +387,56 @@ const LoginScreen = ({ onLoginSuccess }) => {
           </div>
         )}
       </div>
+
+      {/* Forgot Password Modal */}
+      {showForgotPassword && (
+        <div className="login-screen" style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={closeForgotPassword}>
+          <div className="login-container" style={{ maxWidth: '420px', width: '90%' }} onClick={e => e.stopPropagation()}>
+            <div className="login-header">
+              <h2 className="login-title" style={{ fontSize: '1.4rem' }}>🔑 Reset Password</h2>
+              <p className="login-subtitle">
+                {selectedRole === 'student'
+                  ? 'Enter your School ID to reset your password'
+                  : 'Enter your email address and we\'ll send you a reset link'}
+              </p>
+            </div>
+
+            {resetSuccess ? (
+              <div style={{ textAlign: 'center', padding: '16px 0' }}>
+                <div style={{ fontSize: '48px', marginBottom: '12px' }}>✅</div>
+                <p style={{ color: '#10b981', fontWeight: 600, marginBottom: '8px' }}>{resetSuccess}</p>
+                <button type="button" className="login-button" onClick={closeForgotPassword}>Back to Login</button>
+              </div>
+            ) : (
+              <form onSubmit={handleForgotPassword} className="login-form">
+                <div className="form-group">
+                  <label className="form-label">
+                    {selectedRole === 'student' ? 'School ID' : 'Email Address'}
+                  </label>
+                  <input
+                    type={selectedRole === 'student' ? 'text' : 'email'}
+                    className="form-input"
+                    placeholder={selectedRole === 'student' ? 'TN-TEN-GOV123-ST456' : 'you@example.com'}
+                    value={resetInput}
+                    onChange={e => { setResetInput(selectedRole === 'student' ? e.target.value.toUpperCase() : e.target.value); setError(''); }}
+                    disabled={isLoading}
+                    autoFocus
+                  />
+                </div>
+
+                {error && <div className="error-message">{error}</div>}
+
+                <button type="submit" className="login-button" disabled={isLoading}>
+                  {isLoading ? 'Sending...' : 'Send Reset'}
+                </button>
+                <button type="button" className="forgot-password" onClick={closeForgotPassword} style={{ display: 'block', textAlign: 'center', marginTop: '8px' }}>
+                  Back to Login
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

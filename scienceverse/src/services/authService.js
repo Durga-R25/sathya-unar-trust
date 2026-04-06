@@ -356,23 +356,41 @@ export const loginWithEmail = async (email, password) => {
  */
 export const sendPasswordReset = async (emailOrSchoolId) => {
   try {
-    let email = emailOrSchoolId;
-
-    // If it looks like a School ID, convert to email format
+    // Students use a fake @scienceverse.internal email — Firebase cannot send
+    // password reset emails to these. Direct them to their teacher instead.
     if (validateSchoolId(emailOrSchoolId.toUpperCase())) {
-      email = `${emailOrSchoolId.toLowerCase().replace(/-/g, '')}@scienceverse.internal`;
+      // Look up the student's teacher from Firestore to give a specific contact
+      const usersRef = collection(db, 'users');
+      const q = query(usersRef, where('schoolId', '==', emailOrSchoolId.toUpperCase()));
+      const snap = await getDocs(q);
+
+      if (snap.empty) {
+        throw new Error('No account found for this School ID. Please check the ID and try again.');
+      }
+
+      const studentData = snap.docs[0].data();
+      const schoolName = studentData.schoolName || 'your school';
+
+      return {
+        success: true,
+        message: `Student passwords can only be reset by a teacher or admin.\n\nPlease contact your teacher at ${schoolName} and ask them to reset your password from the Admin panel.`
+      };
     }
 
-    await sendPasswordResetEmail(auth, email);
+    // Teacher / Judge / Admin — use real email, Firebase handles it
+    await sendPasswordResetEmail(auth, emailOrSchoolId);
 
     return {
       success: true,
-      message: 'Password reset email sent. Please check your inbox.'
+      message: 'Password reset email sent! Please check your inbox (and spam folder).'
     };
   } catch (error) {
     console.error('Error sending password reset:', error);
     if (error.code === 'auth/user-not-found') {
-      throw new Error('No account found with this email/School ID');
+      throw new Error('No account found with this email address.');
+    }
+    if (error.code === 'auth/invalid-email') {
+      throw new Error('Invalid email address. Please check and try again.');
     }
     throw error;
   }

@@ -58,7 +58,7 @@ service cloud.firestore {
       // Read permissions:
       // - Users can read their own document
       // - Teachers and admins can list/query users (for duplicate checking)
-      allow get: if isAuthenticated() && request.auth.uid == userId;
+      allow get: if isAuthenticated() && (request.auth.uid == userId || isAdmin() || isTeacher());
       allow list: if isAuthenticated();
 
       // Only admins can create user documents (except students via activation)

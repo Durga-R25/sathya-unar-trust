@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { collection, query, where, getDocs, doc, deleteDoc, updateDoc, setDoc } from 'firebase/firestore';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { collection, query, where, getDocs, doc, deleteDoc, updateDoc, setDoc, writeBatch } from 'firebase/firestore';
+import { createUserWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 import { auth, db } from '../config/firebase';
 import './StudentSearch.css';
 
@@ -19,6 +19,11 @@ const TeacherSearch = ({ currentUser }) => {
   const [stats, setStats] = useState(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+  const [selectedTeacher, setSelectedTeacher] = useState(null);
+  const [editFormData, setEditFormData] = useState({});
+  const [isSaving, setIsSaving] = useState(false);
+  const [isSendingReset, setIsSendingReset] = useState(false);
+  const [resetMessage, setResetMessage] = useState('');
   const [createFormData, setCreateFormData] = useState({
     name: '',
     email: '',
@@ -203,6 +208,94 @@ const TeacherSearch = ({ currentUser }) => {
     }
   };
 
+  // Handle password reset for teacher
+  const handleSendPasswordReset = async () => {
+    if (!selectedTeacher?.email) {
+      setError('No email address found for this teacher.');
+      return;
+    }
+    setIsSendingReset(true);
+    setResetMessage('');
+    setError('');
+    try {
+      await sendPasswordResetEmail(auth, selectedTeacher.email);
+      setResetMessage(`Password reset email sent to ${selectedTeacher.email}`);
+    } catch (err) {
+      if (err.code === 'auth/user-not-found') {
+        setError('No auth account found for this email.');
+      } else {
+        setError('Failed to send reset email: ' + err.message);
+      }
+    } finally {
+      setIsSendingReset(false);
+    }
+  };
+
+  // Handle edit
+  const handleEdit = (teacher) => {
+    setSelectedTeacher(teacher);
+    setResetMessage('');
+    setEditFormData({
+      name: teacher.name || '',
+      schoolName: teacher.schoolName || '',
+      district: teacher.district || '',
+      state: teacher.state || ''
+    });
+  };
+
+  const handleEditSave = async () => {
+    if (!editFormData.name.trim()) { setError('Name is required'); return; }
+    setIsSaving(true);
+    setError('');
+    try {
+      const newName = editFormData.name.trim();
+      const newSchool = editFormData.schoolName.trim();
+      const nameChanged = newName !== selectedTeacher.name;
+      const schoolChanged = newSchool !== (selectedTeacher.schoolName || '');
+
+      const batch = writeBatch(db);
+      batch.update(doc(db, 'users', selectedTeacher.id), {
+        name: newName,
+        schoolName: newSchool,
+        district: editFormData.district.trim(),
+        state: editFormData.state.trim()
+      });
+
+      if (nameChanged || schoolChanged) {
+        // Update teacher's own videos
+        const videosSnap = await getDocs(
+          query(collection(db, 'videos'), where('uploaderId', '==', selectedTeacher.id))
+        );
+        videosSnap.forEach(v => {
+          const updates = {};
+          if (nameChanged) updates.uploaderName = newName;
+          if (schoolChanged) { updates.uploaderSchool = newSchool; updates.schoolName = newSchool; }
+          batch.update(v.ref, updates);
+        });
+
+        // Also update uploadedByName on student videos uploaded by this teacher
+        if (nameChanged) {
+          const uploadedSnap = await getDocs(
+            query(collection(db, 'videos'), where('uploadedBy', '==', selectedTeacher.id))
+          );
+          uploadedSnap.forEach(v => batch.update(v.ref, { uploadedByName: newName }));
+        }
+      }
+
+      await batch.commit();
+      setSearchResults(searchResults.map(t =>
+        t.id === selectedTeacher.id ? { ...t, ...editFormData } : t
+      ));
+      setSelectedTeacher(null);
+      alert('Teacher updated successfully');
+    } catch (error) {
+      console.error('Error updating:', error);
+      setError('Update failed: ' + error.message);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   // Handle delete
   const handleDelete = async (teacher) => {
     if (!window.confirm(`Delete teacher "${teacher.name}"? This cannot be undone.`)) {
@@ -221,6 +314,58 @@ const TeacherSearch = ({ currentUser }) => {
       alert('Delete failed: ' + error.message);
     }
   };
+
+  // Show edit form
+  if (selectedTeacher) {
+    return (
+      <div className="student-search-container">
+        <div className="edit-form-card">
+          <h3>Edit Teacher: {selectedTeacher.name}</h3>
+          {error && <div className="error-message">{error}</div>}
+          <div className="form-group">
+            <label>Name *</label>
+            <input type="text" value={editFormData.name}
+              onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })} />
+          </div>
+          <div className="form-group">
+            <label>School Name</label>
+            <input type="text" value={editFormData.schoolName}
+              onChange={(e) => setEditFormData({ ...editFormData, schoolName: e.target.value })} />
+          </div>
+          <div className="form-group">
+            <label>District</label>
+            <input type="text" value={editFormData.district}
+              onChange={(e) => setEditFormData({ ...editFormData, district: e.target.value })} />
+          </div>
+          <div className="form-group">
+            <label>State</label>
+            <input type="text" value={editFormData.state}
+              onChange={(e) => setEditFormData({ ...editFormData, state: e.target.value })} />
+          </div>
+          {resetMessage && (
+            <div style={{ background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(16,185,129,0.3)', borderRadius: '8px', padding: '10px 14px', marginBottom: '12px', color: '#10b981', fontSize: '13px' }}>
+              ✅ {resetMessage}
+            </div>
+          )}
+          <div className="form-actions">
+            <button className="save-button" onClick={handleEditSave} disabled={isSaving}>
+              {isSaving ? 'Saving...' : 'Save Changes'}
+            </button>
+            <button
+              type="button"
+              className="action-btn"
+              onClick={handleSendPasswordReset}
+              disabled={isSendingReset}
+              style={{ background: '#f59e0b', color: 'white', border: 'none', borderRadius: '8px', padding: '10px 16px', fontWeight: 600, cursor: 'pointer' }}
+            >
+              {isSendingReset ? 'Sending...' : '🔑 Send Password Reset Email'}
+            </button>
+            <button className="cancel-button" onClick={() => { setSelectedTeacher(null); setError(''); setResetMessage(''); }}>Cancel</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="student-search-container">
@@ -446,10 +591,10 @@ const TeacherSearch = ({ currentUser }) => {
                   <div className="student-card-actions">
                     {canModify ? (
                       <>
-                        <button
-                          className="action-btn delete-btn"
-                          onClick={() => handleDelete(teacher)}
-                        >
+                        <button className="action-btn edit-btn" onClick={() => handleEdit(teacher)}>
+                          ✏️ Edit
+                        </button>
+                        <button className="action-btn delete-btn" onClick={() => handleDelete(teacher)}>
                           🗑️ Delete
                         </button>
                       </>
