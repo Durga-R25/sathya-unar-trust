@@ -12,9 +12,11 @@
 ### 2. **Evaluation Panel**
 - Beautiful modal interface for rating videos
 - Real-time average calculation
-- Optional comment field (500 characters max)
+- **Mandatory comment field** (min 10 characters, max 500 characters)
 - Role-based badge showing evaluator type and weight
-- Form validation (all dimensions required)
+- Form validation (all dimensions required, comment required)
+- One evaluation per user per video — enforced via Firebase duplicate check
+- Pre-fills existing ratings when re-opening (edit mode)
 - Success confirmation on submission
 
 ### 3. **Evaluation History**
@@ -167,21 +169,149 @@ const handleEvaluationSubmit = (evaluation) => {
 
 ### Role-Based Weight Calculation
 
+Weights are applied per-role group average, not per individual evaluator. If a role has no evaluations yet, its weight is dropped and the remaining weights are renormalized to 100%.
+
 ```javascript
-// Evaluation weights
+// Base weights by role
 const weights = {
   judge: 0.70,   // 70%
   teacher: 0.20, // 20%
   student: 0.10  // 10%
 };
 
-// Weighted average formula (Phase 7)
-aggregateScore = (
-  judgeScores.avg * 0.70 +
-  teacherScores.avg * 0.20 +
-  studentScores.avg * 0.10
-);
+// Role group averages (null if no evaluations from that role)
+const jAvg = judgeEvals.length > 0   ? sum(judgeEvals[field])   / judgeEvals.length   : null;
+const tAvg = teacherEvals.length > 0 ? sum(teacherEvals[field]) / teacherEvals.length : null;
+const sAvg = studentEvals.length > 0 ? sum(studentEvals[field]) / studentEvals.length : null;
+
+// Active weights (0 if role not present)
+const jW = jAvg !== null ? 0.7 : 0;
+const tW = tAvg !== null ? 0.2 : 0;
+const sW = sAvg !== null ? 0.1 : 0;
+const totalW = jW + tW + sW;  // renormalization denominator
+
+// Weighted aggregate for any field
+aggregateScore = ((jAvg || 0) * jW + (tAvg || 0) * tW + (sAvg || 0) * sW) / totalW;
 ```
+
+Applied to all 5 stored fields: `aggregateScore`, `scientificClarity`, `humanityCare`, `realLifeImpact`, `originalThinking`.
+
+---
+
+## 📊 Scoring Mechanism (Live Implementation)
+
+### Step 1 — Individual Evaluation
+
+Every evaluator rates the video on **4 dimensions** (1–5 stars each):
+
+| Dimension | Icon | What it measures |
+|---|---|---|
+| Scientific Clarity | 🔬 | Accuracy and clarity of science explanation |
+| Humanity & Care | ❤️ | Social impact, empathy, community benefit |
+| Real-Life Impact | 🌍 | Practicality, feasibility, sustainability |
+| Original Thinking | 💡 | Creativity, novelty, unique approach |
+
+Their **personal average** is stored alongside the individual scores:
+
+```
+averageRating = (scientificClarity + humanityCare + realLifeImpact + originalThinking) / 4
+```
+
+---
+
+### Step 2 — Role-Based Weighted Aggregation
+
+After every submission, **all evaluations for that video** are re-fetched from Firebase and aggregated using role weights:
+
+| Role | Weight |
+|---|---|
+| Judge / Admin | **70%** |
+| Teacher | **20%** |
+| Student | **10%** |
+
+**Renormalization rule:** If a role has zero evaluations, its weight is excluded and the remaining weights are normalized. This means the score is always valid even before all roles have participated.
+
+---
+
+### Step 3 — Video Document Updated
+
+The `videos/{id}` Firestore document is updated with:
+
+| Field | Value |
+|---|---|
+| `aggregateScore` | Weighted avg of each evaluator's `averageRating` |
+| `scientificClarity` | Weighted avg of that dimension across all evaluators |
+| `humanityCare` | Weighted avg of that dimension |
+| `realLifeImpact` | Weighted avg of that dimension |
+| `originalThinking` | Weighted avg of that dimension |
+| `totalEvaluations` | Count of all evaluations |
+| `judgeEvaluations` | Count of judge/admin evaluations |
+| `teacherEvaluations` | Count of teacher evaluations |
+| `studentEvaluations` | Count of student evaluations |
+
+---
+
+### Worked Example — All 3 Roles Present
+
+**Scenario:** A video on solar energy has received 3 evaluations.
+
+**Judge** (1 evaluator):
+```
+scientificClarity=5, humanityCare=4, realLifeImpact=5, originalThinking=4
+averageRating = (5 + 4 + 5 + 4) / 4 = 4.50
+```
+
+**Teacher** (1 evaluator):
+```
+scientificClarity=4, humanityCare=3, realLifeImpact=4, originalThinking=3
+averageRating = (4 + 3 + 4 + 3) / 4 = 3.50
+```
+
+**Student** (1 evaluator):
+```
+scientificClarity=3, humanityCare=4, realLifeImpact=3, originalThinking=5
+averageRating = (3 + 4 + 3 + 5) / 4 = 3.75
+```
+
+**Aggregate Score** (all roles present → no renormalization, totalW = 1.0):
+```
+aggregateScore = (4.50 × 0.7) + (3.50 × 0.2) + (3.75 × 0.1)
+               = 3.15 + 0.70 + 0.375
+               = 4.23
+```
+
+**Per-dimension example — `scientificClarity`:**
+```
+= (5 × 0.7) + (4 × 0.2) + (3 × 0.1) = 3.5 + 0.8 + 0.3 = 4.60
+```
+
+---
+
+### Worked Example — Judge Not Yet Present (Renormalization)
+
+Only teacher and student have evaluated so far:
+```
+jW = 0,  tW = 0.2,  sW = 0.1  →  totalW = 0.3
+
+aggregateScore = ((3.50 × 0.2) + (3.75 × 0.1)) / 0.3
+               = (0.70 + 0.375) / 0.3
+               = 1.075 / 0.3
+               = 3.58
+```
+
+Once a judge submits, their 70% weight dominates and will pull the score significantly toward the judge's rating.
+
+---
+
+### Badge Thresholds Driven by `aggregateScore`
+
+| Badge | Trigger |
+|---|---|
+| ⭐ Quality Star | `aggregateScore >= 4.0` |
+| 💯 Perfect Score | `aggregateScore >= 5.0` |
+| 🔥 Trending | `totalEvaluations >= 50` |
+
+---
 
 ## 📊 Mock Data Structure
 
@@ -307,15 +437,23 @@ exports.onEvaluationCreated = functions.firestore
 - [ ] No jank when scrolling
 - [ ] Submission completes in <2s
 
-## 🐛 Known Limitations (To be fixed in Phase 7)
+## 🐛 Known Limitations
 
-1. **No Persistence**: Evaluations reset on page refresh
-2. **No Edit/Delete**: Can't edit submitted evaluations
-3. **No Duplicate Check**: Can evaluate same video multiple times
-4. **No Real Auth**: Using mock user context
-5. **No Score Recalculation**: Video scores don't update after new evaluation
-6. **No Notifications**: Video uploader not notified
-7. **No Validation**: Can submit as any role without verification
+The following items from Phase 2 have been **resolved in the live implementation**:
+
+| Item | Status |
+|---|---|
+| No Persistence | ✅ Fixed — evaluations saved to Firebase Firestore |
+| No Edit/Delete | ✅ Fixed — users can re-open and update their existing evaluation |
+| No Duplicate Check | ✅ Fixed — Firebase query enforces one evaluation per user per video |
+| No Real Auth | ✅ Fixed — Firebase Authentication in use |
+| No Score Recalculation | ✅ Fixed — aggregate scores recalculated on every evaluation submit |
+
+Remaining limitations:
+
+1. **No Delete**: Users can edit their evaluation but not delete it
+2. **No Notifications**: Video uploader is not notified of new evaluations
+3. **Score update not atomic**: If the score update step fails after an evaluation is saved, a warning is logged but the evaluation is still recorded (scores will correct on the next evaluation submit)
 
 ## 📈 Success Metrics
 
