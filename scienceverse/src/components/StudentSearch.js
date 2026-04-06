@@ -71,11 +71,12 @@ const StudentSearch = ({ currentUser }) => {
           }
         });
 
-        // Search in pending activations
+        // Search in pending activations (skip already-activated records)
         const pendingSnapshot = await getDocs(collection(db, 'pendingActivations'));
 
         pendingSnapshot.forEach(doc => {
           const data = doc.data();
+          if (data.activated) return;
           const schoolId = data.schoolId?.toUpperCase() || '';
 
           if (schoolId.includes(normalizedQuery) || normalizedQuery.includes(schoolId.substring(0, 4))) {
@@ -111,11 +112,12 @@ const StudentSearch = ({ currentUser }) => {
           }
         });
 
-        // Search pending activations
+        // Search pending activations (skip already-activated records)
         const pendingSnapshot = await getDocs(collection(db, 'pendingActivations'));
 
         pendingSnapshot.forEach(doc => {
           const data = doc.data();
+          if (data.activated) return;
           const name = data.name?.toLowerCase() || '';
 
           if (name.includes(normalizedQuery) || normalizedQuery.split(' ').some(part => name.includes(part))) {
@@ -151,11 +153,12 @@ const StudentSearch = ({ currentUser }) => {
           }
         });
 
-        // Search pending activations
+        // Search pending activations (skip already-activated records)
         const pendingSnapshot = await getDocs(collection(db, 'pendingActivations'));
 
         pendingSnapshot.forEach(doc => {
           const data = doc.data();
+          if (data.activated) return;
           const schoolName = data.schoolName?.toLowerCase() || '';
 
           if (schoolName.includes(normalizedQuery) || normalizedQuery.split(' ').some(part => schoolName.includes(part))) {
