@@ -1,0 +1,2451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spiritual Library</title>
+
+  <!--
+  ╔══════════════════════════════════════════════════════════════════╗
+  ║           SPIRITUAL AUDIO LIBRARY — SETUP INSTRUCTIONS          ║
+  ╠══════════════════════════════════════════════════════════════════╣
+  ║  1. Create a Google Cloud project → Enable Drive API            ║
+  ║  2. OAuth 2.0 Client ID (type: Web application)                 ║
+  ║     • Authorised JavaScript origins: http://localhost:PORT       ║
+  ║     • Authorised redirect URIs:      http://localhost:PORT       ║
+  ║  3. Share your Drive root folder with the users' Google accounts ║
+  ║  4. Paste ROOT_FOLDER_ID and GOOGLE_CLIENT_ID below             ║
+  ║  5. Serve via a local HTTP server (NOT file://) e.g.:           ║
+  ║       npx serve .   OR   python -m http.server 8080             ║
+  ╚══════════════════════════════════════════════════════════════════╝
+  -->
+
+  <style>
+    /* ================================================================
+       CSS CUSTOM PROPERTIES — Light & Dark Mode
+    ================================================================ */
+    :root {
+      --primary:       #0F6E56;
+      --primary-lt:    #19a37e;
+      --primary-dk:    #0a4f3d;
+      --accent:        #EF9F27;
+      --accent-lt:     #f5b84c;
+      --danger:        #d9534f;
+
+      --bg:            #f7f4ee;
+      --bg-card:       #ffffff;
+      --bg-sidebar:    #eeebe3;
+      --bg-header:     #ffffff;
+
+      --text:          #1a1a1a;
+      --text-muted:    #666666;
+      --text-subtle:   #aaaaaa;
+
+      --border:        #e0dbd0;
+      --border-hover:  #c4bfb5;
+
+      --player-bg:     #0d1b2a;
+      --player-text:   #eef2f7;
+      --player-muted:  #7a8fa8;
+
+      --shadow-xs:     0 1px 2px rgba(0,0,0,.06);
+      --shadow-sm:     0 2px 6px rgba(0,0,0,.09);
+      --shadow-md:     0 4px 14px rgba(0,0,0,.12);
+      --shadow-lg:     0 10px 30px rgba(0,0,0,.16);
+
+      --radius-xs:     6px;
+      --radius-sm:     9px;
+      --radius:        13px;
+      --radius-lg:     18px;
+
+      --sidebar-w:     250px;
+      --header-h:      62px;
+      --player-h:      84px;
+      --trans-w:       400px;
+
+      --ease:          cubic-bezier(.4,0,.2,1);
+      --speed:         .18s;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg:           #0e1118;
+        --bg-card:      #181e2d;
+        --bg-sidebar:   #12161f;
+        --bg-header:    #181e2d;
+        --text:         #e4e9f4;
+        --text-muted:   #8a96ad;
+        --text-subtle:  #515b70;
+        --border:       #232b3e;
+        --border-hover: #333f5a;
+        --shadow-xs:    0 1px 2px rgba(0,0,0,.3);
+        --shadow-sm:    0 2px 6px rgba(0,0,0,.35);
+        --shadow-md:    0 4px 14px rgba(0,0,0,.45);
+        --shadow-lg:    0 10px 30px rgba(0,0,0,.55);
+      }
+    }
+
+    /* ================================================================
+       RESET & BASE
+    ================================================================ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+      line-height: 1.5;
+    }
+
+    button { cursor: pointer; border: none; background: none; font: inherit; color: inherit; }
+    input, select { font: inherit; }
+    a { color: inherit; text-decoration: none; }
+
+    /* ================================================================
+       SCREENS  (login / access-denied / loading)
+    ================================================================ */
+    .screen {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 28px;
+      padding: 24px;
+      background: var(--bg);
+    }
+
+    .screen-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 52px 44px;
+      text-align: center;
+      max-width: 430px;
+      width: 100%;
+      box-shadow: var(--shadow-lg);
+    }
+
+    .screen-om {
+      font-size: 56px;
+      line-height: 1;
+      margin-bottom: 18px;
+      color: var(--primary);
+      display: block;
+    }
+
+    .screen-title {
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: -.3px;
+      margin-bottom: 10px;
+    }
+
+    .screen-sub {
+      font-size: 14px;
+      color: var(--text-muted);
+      line-height: 1.7;
+      margin-bottom: 36px;
+    }
+
+    .btn-google {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      width: 100%;
+      padding: 14px 24px;
+      background: var(--primary);
+      color: #fff;
+      border-radius: var(--radius);
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: .01em;
+      transition: background var(--speed) var(--ease), transform var(--speed) var(--ease);
+    }
+    .btn-google:hover { background: var(--primary-lt); transform: translateY(-1px); }
+    .btn-google:active { transform: none; }
+
+    .btn-neutral {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      width: 100%;
+      padding: 14px 24px;
+      background: #6c757d;
+      color: #fff;
+      border-radius: var(--radius);
+      font-size: 15px;
+      font-weight: 700;
+      transition: background var(--speed);
+    }
+    .btn-neutral:hover { background: #5a6268; }
+
+    /* Loading spinner */
+    .spinner {
+      width: 44px; height: 44px;
+      border: 3px solid var(--border);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin .75s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .loading-label {
+      font-size: 14px;
+      color: var(--text-muted);
+      min-height: 22px;
+    }
+
+    /* Config warning */
+    .config-warn {
+      background: rgba(239,159,39,.12);
+      border: 1px solid rgba(239,159,39,.4);
+      border-radius: var(--radius-sm);
+      padding: 12px 16px;
+      font-size: 13px;
+      color: #b07d10;
+      text-align: left;
+      line-height: 1.6;
+      margin-bottom: 20px;
+    }
+
+    /* ================================================================
+       MAIN APP SHELL
+    ================================================================ */
+    #app {
+      display: none;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+    #app.visible { display: flex; }
+
+    /* ================================================================
+       OFFLINE BANNER
+    ================================================================ */
+    .offline-bar {
+      background: var(--danger);
+      color: #fff;
+      text-align: center;
+      padding: 7px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      display: none;
+      flex-shrink: 0;
+      z-index: 400;
+    }
+    .offline-bar.on { display: block; }
+
+    /* ================================================================
+       HEADER
+    ================================================================ */
+    .app-header {
+      height: var(--header-h);
+      background: var(--bg-header);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 18px;
+      gap: 14px;
+      flex-shrink: 0;
+      box-shadow: var(--shadow-xs);
+      z-index: 100;
+    }
+
+    .menu-btn {
+      display: none;
+      width: 34px; height: 34px;
+      border-radius: var(--radius-xs);
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      color: var(--text-muted);
+      flex-shrink: 0;
+      transition: background var(--speed);
+    }
+    .menu-btn:hover { background: var(--border); }
+
+    .logo-wrap {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      flex-shrink: 0;
+      color: var(--primary);
+    }
+    .logo-om { font-size: 24px; line-height: 1; }
+    .logo-name { font-size: 16px; font-weight: 800; letter-spacing: -.2px; white-space: nowrap; }
+
+    .search-wrap {
+      flex: 1;
+      max-width: 500px;
+      position: relative;
+    }
+    .search-ico {
+      position: absolute;
+      left: 12px; top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-subtle);
+      pointer-events: none;
+      display: flex;
+    }
+    .search-input {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 9px 14px 9px 38px;
+      font-size: 14px;
+      color: var(--text);
+      outline: none;
+      transition: border-color var(--speed), box-shadow var(--speed);
+    }
+    .search-input::placeholder { color: var(--text-subtle); }
+    .search-input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(15,110,86,.14);
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-left: auto;
+    }
+
+    .user-chip {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+    .user-avatar {
+      width: 34px; height: 34px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 700;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .user-name { font-size: 13px; font-weight: 600; }
+
+    .btn-signout {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xs);
+      padding: 7px 13px;
+      font-size: 13px;
+      color: var(--text-muted);
+      transition: border-color var(--speed), color var(--speed), background var(--speed);
+    }
+    .btn-signout:hover { border-color: var(--danger); color: var(--danger); background: rgba(217,83,79,.05); }
+
+    /* ================================================================
+       APP BODY  (sidebar + content)
+    ================================================================ */
+    .app-body {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* ================================================================
+       SIDEBAR
+    ================================================================ */
+    .sidebar {
+      width: var(--sidebar-w);
+      background: var(--bg-sidebar);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      flex-shrink: 0;
+      transition: transform var(--speed) var(--ease);
+    }
+
+    .sidebar-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px 8px 14px;
+    }
+
+    .sidebar-sec { margin-bottom: 22px; }
+    .sidebar-sec-label {
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      color: var(--text-subtle);
+      padding: 0 9px 8px;
+    }
+
+    .sidebar-btn {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      width: 100%;
+      padding: 9px 10px;
+      border-radius: var(--radius-xs);
+      font-size: 13.5px;
+      color: var(--text-muted);
+      text-align: left;
+      border: 1px solid transparent;
+      transition: background var(--speed), color var(--speed), border-color var(--speed);
+      cursor: pointer;
+    }
+    .sidebar-btn:hover { background: rgba(15,110,86,.07); color: var(--text); }
+    .sidebar-btn.active {
+      background: rgba(15,110,86,.13);
+      color: var(--primary);
+      font-weight: 700;
+      border-color: rgba(15,110,86,.18);
+    }
+
+    .cat-dot {
+      width: 9px; height: 9px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .side-label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    .side-badge {
+      font-size: 11px;
+      background: var(--border);
+      border-radius: 10px;
+      padding: 2px 7px;
+      color: var(--text-muted);
+      flex-shrink: 0;
+    }
+    .sidebar-btn.active .side-badge {
+      background: rgba(15,110,86,.2);
+      color: var(--primary);
+    }
+
+    /* ================================================================
+       CONTENT AREA
+    ================================================================ */
+    .content-area {
+      flex: 1;
+      overflow-y: auto;
+      padding: 22px 22px calc(var(--player-h) + 22px);
+    }
+
+    .content-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+
+    .content-title { font-size: 22px; font-weight: 800; letter-spacing: -.3px; }
+    .content-count { font-size: 13px; color: var(--text-muted); margin-top: 3px; }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .filter-sel {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xs);
+      padding: 7px 10px;
+      font-size: 13px;
+      color: var(--text);
+      cursor: pointer;
+      outline: none;
+    }
+    .filter-sel:focus { border-color: var(--primary); }
+
+    .btn-share-track {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xs);
+      padding: 7px 12px;
+      font-size: 13px;
+      color: var(--text-muted);
+      transition: border-color var(--speed), color var(--speed);
+    }
+    .btn-share-track:hover { border-color: var(--primary); color: var(--primary); }
+
+    /* ================================================================
+       CARDS GRID
+    ================================================================ */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(285px, 1fr));
+      gap: 16px;
+    }
+
+    /* Skeleton */
+    .card-skel {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px;
+      height: 168px;
+      position: relative;
+      overflow: hidden;
+    }
+    .card-skel::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg,transparent 0%,rgba(128,128,128,.07) 50%,transparent 100%);
+      animation: shimmer 1.4s infinite;
+    }
+    @keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+    .skel-line {
+      height: 11px;
+      border-radius: 6px;
+      background: var(--border);
+      margin-bottom: 10px;
+      animation: pulseOp 1.5s ease-in-out infinite;
+    }
+    @keyframes pulseOp { 0%,100% { opacity:1; } 50% { opacity:.4; } }
+
+    /* Audio Card */
+    .audio-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      cursor: default;
+      transition: transform var(--speed) var(--ease), border-color var(--speed);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .audio-card:hover { transform: translateY(-2px); border-color: var(--border-hover); }
+    .audio-card.is-active { border-color: var(--primary); border-width: 2px; }
+
+    .card-row1 { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .card-row2 { flex: 1; }
+    .card-row3 { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: auto; }
+
+    .cat-badge {
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      padding: 3px 9px;
+      border-radius: 20px;
+      color: #fff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 140px;
+    }
+
+    .card-actions { display: flex; align-items: center; gap: 3px; }
+
+    .icon-btn {
+      width: 30px; height: 30px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      color: var(--text-muted);
+      transition: background var(--speed), color var(--speed);
+    }
+    .icon-btn:hover { background: var(--bg); color: var(--text); }
+    .icon-btn.starred { color: var(--accent); }
+
+    .card-title {
+      font-size: 14px;
+      font-weight: 700;
+      line-height: 1.4;
+      color: var(--text);
+    }
+
+    .card-meta { font-size: 12px; color: var(--text-muted); }
+
+    .card-err {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 12px;
+      color: var(--danger);
+    }
+
+    /* Waveform animation */
+    .waveform { display: flex; align-items: center; gap: 2px; height: 22px; }
+    .wv-bar {
+      width: 3px;
+      border-radius: 2px;
+      background: var(--primary);
+      opacity: .4;
+      transition: height .15s;
+    }
+    .wv-bar:nth-child(1) { height: 5px; }
+    .wv-bar:nth-child(2) { height: 11px; }
+    .wv-bar:nth-child(3) { height: 17px; }
+    .wv-bar:nth-child(4) { height: 13px; }
+    .wv-bar:nth-child(5) { height: 7px; }
+    .wv-bar:nth-child(6) { height: 15px; }
+    .wv-bar:nth-child(7) { height: 9px; }
+
+    .audio-card.is-active .wv-bar { opacity: 1; }
+    .audio-card.is-active.is-playing .wv-bar {
+      animation: wave .75s ease-in-out infinite alternate;
+    }
+    .audio-card.is-active.is-playing .wv-bar:nth-child(1) { animation-delay: 0s; }
+    .audio-card.is-active.is-playing .wv-bar:nth-child(2) { animation-delay: .08s; }
+    .audio-card.is-active.is-playing .wv-bar:nth-child(3) { animation-delay: .18s; }
+    .audio-card.is-active.is-playing .wv-bar:nth-child(4) { animation-delay: .12s; }
+    .audio-card.is-active.is-playing .wv-bar:nth-child(5) { animation-delay: .04s; }
+    .audio-card.is-active.is-playing .wv-bar:nth-child(6) { animation-delay: .22s; }
+    .audio-card.is-active.is-playing .wv-bar:nth-child(7) { animation-delay: .09s; }
+    @keyframes wave { from { transform: scaleY(.3); } to { transform: scaleY(1); } }
+
+    .card-btns { display: flex; align-items: center; gap: 8px; }
+
+    .btn-transcript {
+      font-size: 11px;
+      color: var(--primary);
+      font-weight: 600;
+      padding: 4px 8px;
+      border-radius: var(--radius-xs);
+      border: 1px solid rgba(15,110,86,.3);
+      transition: background var(--speed);
+    }
+    .btn-transcript:hover { background: rgba(15,110,86,.08); }
+
+    .play-btn {
+      width: 38px; height: 38px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      flex-shrink: 0;
+      transition: background var(--speed), transform var(--speed);
+    }
+    .play-btn:hover { background: var(--primary-lt); transform: scale(1.08); }
+    .play-btn:active { transform: scale(.97); }
+
+    /* ================================================================
+       EMPTY / ERROR STATES
+    ================================================================ */
+    .empty-state {
+      text-align: center;
+      padding: 64px 24px;
+      color: var(--text-muted);
+    }
+    .empty-ico { font-size: 52px; margin-bottom: 16px; }
+    .empty-title { font-size: 18px; font-weight: 700; margin-bottom: 8px; color: var(--text); }
+    .empty-desc { font-size: 14px; line-height: 1.7; }
+
+    /* ================================================================
+       PLAYER BAR
+    ================================================================ */
+    .player-bar {
+      height: var(--player-h);
+      background: var(--player-bg);
+      border-top: 1px solid rgba(255,255,255,.07);
+      display: none;
+      align-items: center;
+      padding: 0 20px;
+      gap: 16px;
+      flex-shrink: 0;
+      z-index: 200;
+    }
+    .player-bar.visible { display: flex; }
+
+    /* Track info */
+    .p-track { display: flex; align-items: center; gap: 11px; min-width: 180px; max-width: 230px; flex-shrink: 0; }
+    .p-art {
+      width: 46px; height: 46px;
+      border-radius: var(--radius-xs);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      font-weight: 900;
+      color: #fff;
+      flex-shrink: 0;
+    }
+    .p-meta { overflow: hidden; }
+    .p-title { font-size: 13px; font-weight: 700; color: var(--player-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .p-cat { font-size: 11px; color: var(--player-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    /* Controls */
+    .p-controls {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 7px;
+      max-width: 520px;
+    }
+
+    .p-btns { display: flex; align-items: center; gap: 4px; }
+
+    .p-btn {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--player-muted);
+      font-size: 16px;
+      transition: color var(--speed), background var(--speed);
+    }
+    .p-btn:hover { color: var(--player-text); background: rgba(255,255,255,.08); }
+    .p-btn.lit { color: var(--accent); }
+
+    .p-play {
+      width: 46px; height: 46px;
+      border-radius: 50%;
+      background: #fff;
+      color: var(--player-bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      transition: transform var(--speed), background var(--speed);
+    }
+    .p-play:hover { transform: scale(1.06); background: #eaeaea; }
+    .p-play:active { transform: scale(.97); }
+
+    /* Progress */
+    .p-progress { display: flex; align-items: center; gap: 8px; width: 100%; }
+    .p-time { font-size: 11px; color: var(--player-muted); white-space: nowrap; min-width: 36px; }
+    .p-time:last-child { text-align: right; }
+
+    input[type=range].p-range {
+      flex: 1;
+      height: 4px;
+      cursor: pointer;
+      accent-color: var(--primary);
+      background: rgba(255,255,255,.15);
+      border-radius: 2px;
+      outline: none;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+    input[type=range].p-range::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      background: #fff;
+      cursor: pointer;
+    }
+    input[type=range].p-range:hover::-webkit-slider-thumb { background: var(--accent-lt); }
+
+    /* Right controls */
+    .p-right { display: flex; align-items: center; gap: 7px; flex-shrink: 0; }
+
+    .p-buf-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--accent);
+      animation: blink 1s infinite;
+    }
+    @keyframes blink { 0%,100%{opacity:1;} 50%{opacity:.1;} }
+
+    .speed-sel {
+      background: rgba(255,255,255,.09);
+      border: 1px solid rgba(255,255,255,.15);
+      border-radius: var(--radius-xs);
+      color: var(--player-text);
+      font-size: 12px;
+      padding: 5px 7px;
+      cursor: pointer;
+      outline: none;
+    }
+
+    input[type=range].vol-range {
+      width: 76px;
+      height: 4px;
+      cursor: pointer;
+      accent-color: var(--primary);
+      outline: none;
+      -webkit-appearance: none;
+      appearance: none;
+      background: rgba(255,255,255,.15);
+      border-radius: 2px;
+    }
+    input[type=range].vol-range::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      background: rgba(255,255,255,.8);
+      cursor: pointer;
+    }
+
+    /* ================================================================
+       TRANSCRIPTION PANEL
+    ================================================================ */
+    .trans-panel {
+      position: fixed;
+      right: 0;
+      top: var(--header-h);
+      bottom: var(--player-h);
+      width: var(--trans-w);
+      background: var(--bg-card);
+      border-left: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      transform: translateX(105%);
+      transition: transform .3s var(--ease);
+      z-index: 150;
+      box-shadow: var(--shadow-lg);
+    }
+    .trans-panel.open { transform: translateX(0); }
+
+    .trans-hdr {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 15px 16px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .trans-track-title { font-size: 14px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .trans-actions { display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
+
+    .btn-sz {
+      width: 28px; height: 28px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xs);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--text-muted);
+      transition: border-color var(--speed), color var(--speed);
+    }
+    .btn-sz:hover { border-color: var(--primary); color: var(--primary); }
+
+    .trans-body { flex: 1; overflow-y: auto; padding: 20px 20px 16px; }
+    .trans-text {
+      font-family: Georgia, 'Times New Roman', serif;
+      line-height: 1.85;
+      color: var(--text);
+      white-space: pre-wrap;
+    }
+
+    .t-seg {
+      padding: 5px 8px;
+      border-radius: var(--radius-xs);
+      cursor: pointer;
+      transition: background var(--speed);
+      margin-bottom: 3px;
+    }
+    .t-seg:hover { background: rgba(15,110,86,.07); }
+    .t-seg.t-active { background: rgba(239,159,39,.18); }
+    .t-ts {
+      font-family: 'Courier New', monospace;
+      font-size: 11px;
+      color: var(--primary);
+      margin-right: 6px;
+      font-weight: 600;
+    }
+
+    mark.hl { background: rgba(239,159,39,.35); border-radius: 2px; }
+
+    /* ================================================================
+       SIDEBAR OVERLAY (mobile)
+    ================================================================ */
+    .sidebar-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.5);
+      z-index: 299;
+      display: none;
+    }
+    .sidebar-overlay.on { display: block; }
+
+    /* ================================================================
+       TOAST NOTIFICATION
+    ================================================================ */
+    .toast {
+      position: fixed;
+      bottom: calc(var(--player-h) + 20px);
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: #1a1a2e;
+      color: #f0f4f8;
+      padding: 11px 22px;
+      border-radius: 24px;
+      font-size: 13px;
+      font-weight: 600;
+      opacity: 0;
+      transition: opacity .2s, transform .2s;
+      z-index: 600;
+      white-space: nowrap;
+      pointer-events: none;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ================================================================
+       SCROLLBARS
+    ================================================================ */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--border-hover); }
+
+    /* ================================================================
+       RESPONSIVE
+    ================================================================ */
+    @media (max-width: 768px) {
+      :root {
+        --sidebar-w: 0px;
+        --player-h: 62px;
+        --trans-w: 100%;
+      }
+      .sidebar {
+        position: fixed;
+        left: 0; top: var(--header-h); bottom: 0;
+        width: 270px;
+        transform: translateX(-110%);
+        z-index: 300;
+      }
+      .sidebar.mob-open { transform: translateX(0); }
+      .menu-btn { display: flex; }
+      .user-name { display: none; }
+      .logo-name { font-size: 14px; }
+      .p-track { min-width: 0; max-width: 130px; }
+      .p-right { display: none; }
+      .cards-grid { grid-template-columns: 1fr; }
+      .content-area { padding: 14px 14px calc(var(--player-h) + 14px); }
+      .trans-panel { top: var(--header-h); bottom: var(--player-h); }
+    }
+
+    @media (min-width: 769px) {
+      .menu-btn { display: none; }
+      .sidebar-overlay { display: none !important; }
+    }
+
+    /* ================================================================
+       UTILITY
+    ================================================================ */
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+<!-- ================================================================
+     OFFLINE BANNER
+================================================================ -->
+<div class="offline-bar" id="offline-bar">
+  ⚡ You are offline — playback may be interrupted.
+</div>
+
+<!-- ================================================================
+     LOGIN SCREEN
+================================================================ -->
+<div class="screen" id="scr-login">
+  <div class="screen-card">
+    <span class="screen-om">ॐ</span>
+    <h1 class="screen-title">Spiritual Library</h1>
+    <p class="screen-sub">
+      A personal archive of sacred audio teachings.<br>
+      Sign in with the Google account that has access to the library.
+    </p>
+    <div id="config-warn" class="config-warn hidden">
+      ⚠ Config not set — open the HTML file and replace the placeholder values for
+      <code>ROOT_FOLDER_ID</code> and <code>GOOGLE_CLIENT_ID</code>.
+    </div>
+    <button class="btn-google" onclick="initiateOAuth()">
+      <!-- Google "G" logo SVG (white, inline) -->
+      <svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true">
+        <path fill="#fff" d="M43.6 20H24v8h11.3C33.7 33.7 29.3 37 24 37c-7.2 0-13-5.8-13-13s5.8-13 13-13c3.1 0 5.9 1.1 8.1 2.9l5.7-5.7C34.3 5.9 29.4 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20c11 0 19.5-8 19.5-20 0-1.3-.1-2.7-.4-4z"/>
+      </svg>
+      Sign in with Google
+    </button>
+  </div>
+</div>
+
+<!-- ================================================================
+     ACCESS DENIED SCREEN
+================================================================ -->
+<div class="screen hidden" id="scr-denied">
+  <div class="screen-card" style="max-width:520px">
+    <span class="screen-om" style="color:var(--danger)">⚠</span>
+    <h1 class="screen-title">Access Denied</h1>
+    <p class="screen-sub">
+      Could not load the Drive folder. See the reason below.
+    </p>
+    <!-- Diagnostic box — filled by showDeniedReason() -->
+    <div id="denied-reason" style="
+      background:rgba(217,83,79,.08);
+      border:1px solid rgba(217,83,79,.35);
+      border-radius:8px;
+      padding:12px 14px;
+      font-size:12.5px;
+      color:#a02020;
+      text-align:left;
+      white-space:pre-wrap;
+      word-break:break-word;
+      line-height:1.6;
+      margin-bottom:20px;
+      display:none;
+    "></div>
+    <p style="font-size:12px;color:var(--text-muted);margin-bottom:20px">
+      Check the browser Console (F12) for full details.
+    </p>
+    <button class="btn-neutral" onclick="signOut()">Sign Out &amp; Try Again</button>
+  </div>
+</div>
+
+<!-- ================================================================
+     LOADING SCREEN
+================================================================ -->
+<div class="screen hidden" id="scr-loading">
+  <div class="spinner"></div>
+  <p class="loading-label" id="load-lbl">Loading your library…</p>
+</div>
+
+<!-- ================================================================
+     MAIN APPLICATION
+================================================================ -->
+<div id="app">
+
+  <!-- Sidebar overlay (mobile) -->
+  <div class="sidebar-overlay" id="sb-overlay" onclick="toggleSidebar(false)"></div>
+
+  <!-- ── HEADER ──────────────────────────────────────────────────── -->
+  <header class="app-header">
+    <button class="menu-btn" onclick="toggleSidebar()" title="Menu" aria-label="Menu">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+      </svg>
+    </button>
+
+    <div class="logo-wrap" aria-label="Spiritual Library">
+      <!-- Inline OM / Lotus SVG -->
+      <svg class="logo-om" width="26" height="26" viewBox="0 0 100 100" fill="currentColor" aria-hidden="true">
+        <text x="50" y="78" font-size="80" text-anchor="middle" font-family="serif">ॐ</text>
+      </svg>
+      <span class="logo-name">Spiritual Library</span>
+    </div>
+
+    <div class="search-wrap" role="search">
+      <span class="search-ico" aria-hidden="true">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+      </span>
+      <input
+        id="search-input"
+        class="search-input"
+        type="search"
+        placeholder="Search teachings, categories…"
+        autocomplete="off"
+        aria-label="Search"
+      >
+    </div>
+
+    <div class="header-right">
+      <div class="user-chip">
+        <div class="user-avatar" id="user-avatar" aria-hidden="true"></div>
+        <span class="user-name" id="user-name"></span>
+      </div>
+      <button class="btn-signout" onclick="signOut()">Sign Out</button>
+    </div>
+  </header>
+
+  <!-- ── APP BODY ────────────────────────────────────────────────── -->
+  <div class="app-body">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar" aria-label="Navigation">
+      <div class="sidebar-scroll" id="sb-scroll"><!-- js fills --></div>
+    </aside>
+
+    <!-- CONTENT -->
+    <main class="content-area" id="content-area" aria-live="polite"><!-- js fills --></main>
+
+  </div><!-- /.app-body -->
+
+  <!-- ── PLAYER BAR ──────────────────────────────────────────────── -->
+  <div class="player-bar" id="player-bar" role="region" aria-label="Audio Player">
+
+    <!-- Track Info -->
+    <div class="p-track">
+      <div class="p-art" id="p-art" aria-hidden="true"></div>
+      <div class="p-meta">
+        <div class="p-title" id="p-title">No track selected</div>
+        <div class="p-cat"  id="p-cat">—</div>
+      </div>
+    </div>
+
+    <!-- Center Controls -->
+    <div class="p-controls">
+      <div class="p-btns">
+        <button class="p-btn" id="btn-shuffle" onclick="toggleShuffle()" title="Shuffle" aria-label="Shuffle">
+          <!-- shuffle icon -->
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/>
+            <polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/>
+            <line x1="4" y1="4" x2="9" y2="9"/>
+          </svg>
+        </button>
+        <button class="p-btn" onclick="playPrev()" title="Previous (← long)" aria-label="Previous">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+            <polygon points="19 20 9 12 19 4"/><line x1="5" y1="19" x2="5" y2="5" stroke="currentColor" stroke-width="2"/>
+          </svg>
+        </button>
+        <button class="p-play" id="btn-pp" onclick="togglePlayPause()" title="Play/Pause (Space)" aria-label="Play/Pause">
+          <svg id="ico-play" width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21"/></svg>
+          <svg id="ico-pause" width="22" height="22" viewBox="0 0 24 24" fill="currentColor" class="hidden"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+        </button>
+        <button class="p-btn" onclick="playNext()" title="Next" aria-label="Next">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+            <polygon points="5 4 15 12 5 20"/><line x1="19" y1="5" x2="19" y2="19" stroke="currentColor" stroke-width="2"/>
+          </svg>
+        </button>
+        <button class="p-btn" id="btn-repeat" onclick="toggleRepeat()" title="Repeat" aria-label="Repeat">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/>
+            <polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="p-progress">
+        <span class="p-time" id="p-cur">0:00</span>
+        <input type="range" class="p-range" id="p-prog" min="0" max="1000" value="0" step="1" aria-label="Seek">
+        <span class="p-time" id="p-dur">0:00</span>
+      </div>
+    </div>
+
+    <!-- Right Controls -->
+    <div class="p-right">
+      <div id="p-buf" class="p-buf-dot hidden" title="Buffering…" aria-label="Buffering"></div>
+
+      <button class="p-btn" id="btn-mute" onclick="toggleMute()" title="Mute (M)" aria-label="Mute">
+        <svg id="ico-vol" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+          <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/>
+        </svg>
+        <svg id="ico-mute" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="hidden">
+          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+          <line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/>
+        </svg>
+      </button>
+
+      <input type="range" class="vol-range" id="vol-range" min="0" max="1" step="0.02" value="1" aria-label="Volume">
+
+      <select class="speed-sel" id="speed-sel" onchange="setSpeed(this.value)" aria-label="Playback speed">
+        <option value="0.5">0.5×</option>
+        <option value="0.75">0.75×</option>
+        <option value="1" selected>1×</option>
+        <option value="1.25">1.25×</option>
+        <option value="1.5">1.5×</option>
+        <option value="2">2×</option>
+      </select>
+
+      <button class="p-btn" onclick="toggleTranscription()" title="Toggle Transcription (F)" aria-label="Toggle transcription">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
+        </svg>
+      </button>
+    </div>
+
+  </div><!-- /.player-bar -->
+
+  <!-- ── TRANSCRIPTION PANEL ─────────────────────────────────────── -->
+  <aside class="trans-panel" id="trans-panel" aria-label="Transcription">
+    <div class="trans-hdr">
+      <span class="trans-track-title" id="trans-title">Transcription</span>
+      <div class="trans-actions">
+        <button class="btn-sz" onclick="changeFont(-1)" title="Smaller text" aria-label="Decrease font size">A−</button>
+        <button class="btn-sz" style="font-size:15px" onclick="changeFont(1)" title="Larger text" aria-label="Increase font size">A+</button>
+        <button class="icon-btn" onclick="copyTranscription()" title="Copy to clipboard" aria-label="Copy transcription">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+          </svg>
+        </button>
+        <button class="icon-btn" onclick="closeTranscription()" title="Close" aria-label="Close transcription">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+    <div class="trans-body" id="trans-body">
+      <div class="trans-text" id="trans-text">Select a track and click "Transcript" to view.</div>
+    </div>
+  </aside>
+
+</div><!-- /#app -->
+
+<!-- TOAST -->
+<div class="toast" id="toast" aria-live="assertive" aria-atomic="true"></div>
+
+<!-- ================================================================
+     JAVASCRIPT
+================================================================ -->
+<script>
+'use strict';
+
+/* ================================================================
+   ① CONFIG — replace these two values before opening in the browser
+================================================================ */
+const ROOT_FOLDER_ID  = '18py-4OKHLVvPJA6qsWwGw4zZeEnEWjqQ';
+const GOOGLE_CLIENT_ID = '235251046725-t9sgndib6r4eftj2fghks7bl76dqqhl9.apps.googleusercontent.com';
+// The GIS popup flow does not use a redirect URI — only the JS origin matters.
+
+/* ================================================================
+   ② CONSTANTS
+================================================================ */
+const DRIVE_API    = 'https://www.googleapis.com/drive/v3';
+const USERINFO_URL = 'https://www.googleapis.com/oauth2/v3/userinfo';
+
+const AUDIO_EXTENSIONS = ['.mp3', '.wav', '.m4a', '.ogg', '.aac', '.flac', '.opus'];
+const IGNORE_EXTENSIONS = ['.srt', '.vtt'];
+
+// 12 distinct, spiritual-friendly category colours
+const CAT_COLORS = [
+  '#2E7D6F','#C06030','#5B6FA6','#8B5E3C',
+  '#7B3F8E','#2C6B94','#6B7B2C','#B45050',
+  '#3A7D3A','#8E5E2E','#4A6B8E','#7A3F6B',
+];
+
+const DURATION_FILTER = { all:'all', short:'short', medium:'medium', long:'long' };
+
+/* ================================================================
+   ③ APPLICATION STATE
+================================================================ */
+const S = {
+  token:       null,
+  user:        null,
+  categories:  [],      // [{id, name, color, tracks:[]}]
+  allTracks:   [],      // flat list
+  filtered:    [],      // after filter/search/sort
+
+  currentTrack:  null,
+  isPlaying:     false,
+  isBuffering:   false,
+  isOffline:     false,
+
+  currentCategory: 'all',  // 'all' | 'bookmarks' | 'recent' | <folder-id>
+  searchQuery:     '',
+  durationFilter:  'all',
+  sortBy:          'title-asc',
+
+  bookmarks:       new Set(),
+  recentlyPlayed:  [],      // array of track IDs (max 10)
+
+  isRepeat:  false,
+  isShuffle: false,
+  isMuted:   false,
+  volume:    1,
+  speed:     1,
+
+  transPanelOpen:  false,
+  transFontSize:   15,
+  transContent:    null,   // raw text
+  transSegments:   [],     // [{time, text}]
+};
+
+/* ================================================================
+   ④ AUDIO ENGINE
+================================================================ */
+const audioEl = new Audio();
+audioEl.preload = 'metadata';
+
+audioEl.addEventListener('timeupdate',      onTimeUpdate);
+audioEl.addEventListener('ended',           onTrackEnded);
+audioEl.addEventListener('loadedmetadata',  onMetadata);
+audioEl.addEventListener('waiting',         () => { S.isBuffering = true;  updateBufUI(); });
+audioEl.addEventListener('playing',         () => { S.isBuffering = false; updateBufUI(); });
+audioEl.addEventListener('canplay',         () => { S.isBuffering = false; updateBufUI(); });
+audioEl.addEventListener('error',           onAudioError);
+
+/* ================================================================
+   ⑤ NETWORK MONITORING
+================================================================ */
+window.addEventListener('online',  () => { S.isOffline = false; el('offline-bar').classList.remove('on'); });
+window.addEventListener('offline', () => { S.isOffline = true;  el('offline-bar').classList.add('on'); });
+
+/* ================================================================
+   ⑥ OAUTH 2.0 — Google Identity Services (GIS) Token Client
+   Replaces the deprecated implicit flow (response_type=token).
+   Uses a popup-based flow — no Redirect URI registration needed.
+   Only the Authorised JavaScript Origin needs to be registered.
+   Docs: https://developers.google.com/identity/oauth2/web/guides/use-token-model
+================================================================ */
+
+let _tokenClient = null;  // GIS token client instance
+let _gisReady    = false; // true once the GIS script has loaded
+
+/**
+ * Dynamically load the Google Identity Services script.
+ * Returns a promise that resolves when window.google.accounts is available.
+ */
+function loadGIS() {
+  return new Promise((resolve, reject) => {
+    if (window.google?.accounts?.oauth2) { resolve(); return; }
+    const s = document.createElement('script');
+    s.src = 'https://accounts.google.com/gsi/client';
+    s.onload  = resolve;
+    s.onerror = () => reject(new Error('Failed to load Google Identity Services script'));
+    document.head.appendChild(s);
+  });
+}
+
+/**
+ * Called when the "Sign in with Google" button is clicked.
+ * Loads GIS, creates a token client, then opens the Google
+ * account-picker popup. On success the callback stores the
+ * token and continues to loadLibrary().
+ */
+async function initiateOAuth() {
+  if (isConfigMissing()) { toast('Fill in ROOT_FOLDER_ID and GOOGLE_CLIENT_ID first.'); return; }
+
+  try {
+    await loadGIS();
+  } catch (e) {
+    toast('Could not load Google sign-in — check your internet connection.');
+    return;
+  }
+
+  // Initialise the token client once
+  _tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: GOOGLE_CLIENT_ID,
+    // drive.readonly covers listing + downloading files
+    scope: 'openid email profile https://www.googleapis.com/auth/drive.readonly',
+
+    // This callback fires when the popup completes (success or error)
+    callback: async (response) => {
+      if (response.error) {
+        console.error('GIS token error:', response);
+        toast(`Sign-in failed: ${response.error}`);
+        return;
+      }
+
+      // Store token + expiry in sessionStorage (never localStorage)
+      const expiresAt = Date.now() + (parseInt(response.expires_in, 10) * 1000);
+      sessionStorage.setItem('sl_token',     response.access_token);
+      sessionStorage.setItem('sl_token_exp', expiresAt.toString());
+
+      S.token = response.access_token;
+
+      // Fetch user profile
+      try {
+        const res = await fetch(USERINFO_URL, { headers: { Authorization: `Bearer ${S.token}` } });
+        if (!res.ok) throw new Error('Userinfo failed');
+        S.user = await res.json();
+        renderUser(S.user);
+      } catch {
+        toast('Could not fetch user profile.');
+        return;
+      }
+
+      // Load the Drive library
+      await loadLibrary();
+    },
+  });
+
+  // Open the Google account-picker popup
+  // prompt:'select_account' forces the account chooser every time
+  _tokenClient.requestAccessToken({ prompt: 'select_account' });
+}
+
+/** Load a previously stored token, returning null if missing or expired */
+function loadStoredToken() {
+  const t   = sessionStorage.getItem('sl_token');
+  const exp = parseInt(sessionStorage.getItem('sl_token_exp') || '0', 10);
+  if (t && Date.now() < exp - 60_000) return t;   // 1-min safety margin
+  return null;
+}
+
+/** Sign out: revoke token via GIS, clear sessionStorage, reload */
+function signOut() {
+  const revokeAndReload = () => { sessionStorage.clear(); window.location.reload(); };
+
+  if (S.token && window.google?.accounts?.oauth2) {
+    // GIS revocation — callback fires when done
+    google.accounts.oauth2.revoke(S.token, revokeAndReload);
+  } else {
+    revokeAndReload();
+  }
+}
+
+/* ================================================================
+   ⑦ GOOGLE DRIVE API CALLS
+================================================================ */
+
+/**
+ * List all files inside a Drive folder.
+ * Handles pagination (>1000 files) by following nextPageToken.
+ * Throws 'ACCESS_DENIED' if the API returns 403.
+ */
+async function listFolder(folderId) {
+  const files = [];
+  let pageToken = null;
+  do {
+    const params = new URLSearchParams({
+      q:       `'${folderId}' in parents and trashed=false`,
+      fields:  'nextPageToken,files(id,name,mimeType,size)',
+      pageSize:'1000',
+      orderBy: 'name',
+    });
+    if (pageToken) params.set('pageToken', pageToken);
+
+    const res = await fetch(`${DRIVE_API}/files?${params}`, {
+      headers: { Authorization: `Bearer ${S.token}` },
+    });
+
+    // Parse body first so we can include the error message in diagnostics
+    const data = await res.json();
+
+    if (!res.ok) {
+      const msg = data?.error?.message || `HTTP ${res.status}`;
+      console.error('Drive API error:', res.status, data);
+      if (res.status === 403) throw new Error(`ACCESS_DENIED: ${msg}`);
+      if (res.status === 404) throw new Error(`NOT_FOUND: ${msg}`);
+      throw new Error(`DRIVE_ERROR_${res.status}: ${msg}`);
+    }
+
+    files.push(...(data.files || []));
+    pageToken = data.nextPageToken || null;
+  } while (pageToken);
+  return files;
+}
+
+/**
+ * Build the media streaming URL for a Drive file.
+ * We append access_token as a query param because <audio> cannot
+ * send custom headers. Google Drive accepts this for alt=media.
+ */
+function mediaUrl(fileId) {
+  return `${DRIVE_API}/files/${fileId}?alt=media&access_token=${encodeURIComponent(S.token)}`;
+}
+
+/** Fetch the text content of a .txt file from Drive */
+async function fetchText(fileId) {
+  const res = await fetch(`${DRIVE_API}/files/${fileId}?alt=media`, {
+    headers: { Authorization: `Bearer ${S.token}` },
+  });
+  if (!res.ok) throw new Error(`Text fetch failed ${res.status}`);
+  return res.text();
+}
+
+/* ================================================================
+   ⑧ DATA LOADING
+================================================================ */
+
+/** Populate the denied screen with a human-readable error reason */
+function showDeniedReason(msg) {
+  // Map internal error codes to friendly explanations
+  const friendly = {
+    'ACCESS_DENIED':  '403 — Drive refused access.\nLikely cause: the ROOT_FOLDER_ID folder has not been shared with your Google account, or the Drive API is not enabled in your Cloud project.',
+    'NOT_FOUND':      '404 — Folder not found.\nLikely cause: ROOT_FOLDER_ID is incorrect. Copy it from the Drive URL:\ndrive.google.com/drive/folders/⟨THIS_PART⟩',
+    'ROOT_EMPTY':     null, // message already fully formed
+  };
+
+  let display = msg;
+  for (const [code, explanation] of Object.entries(friendly)) {
+    if (msg.startsWith(code) && explanation) {
+      display = `${explanation}\n\nRaw error: ${msg}`;
+      break;
+    }
+  }
+
+  const box = el('denied-reason');
+  if (box) {
+    box.textContent = display;
+    box.style.display = 'block';
+  }
+}
+
+async function loadLibrary() {
+  screen('loading');
+  setLoadLabel('Checking Drive access…');
+
+  // ── Fetch root folder contents ─────────────────────────────────
+  let rootItems;
+  try {
+    rootItems = await listFolder(ROOT_FOLDER_ID);
+  } catch (err) {
+    console.error('loadLibrary failed:', err);
+    showDeniedReason(err.message);
+    screen('denied');
+    return;
+  }
+
+  // Top-level folders = categories
+  const folderItems = rootItems.filter(f => f.mimeType === 'application/vnd.google-apps.folder');
+  if (folderItems.length === 0) {
+    // Root folder is accessible but has no sub-folders — show what we found
+    const allNames = rootItems.map(f => f.name).join(', ') || '(empty)';
+    console.warn('Root folder has no sub-folders. Contents:', allNames);
+    showDeniedReason(
+      `ROOT_EMPTY: The folder is accessible but contains no sub-folders.\n` +
+      `Files found at root: ${allNames}\n\n` +
+      `The app expects sub-folders (one per category) inside the root folder.`
+    );
+    screen('denied');
+    return;
+  }
+
+  setLoadLabel(`Found ${folderItems.length} categories — loading files…`);
+
+  const categories = [];
+
+  for (let i = 0; i < folderItems.length; i++) {
+    const folder = folderItems[i];
+    setLoadLabel(`Loading: ${folder.name} (${i + 1}/${folderItems.length})`);
+
+    let folderFiles;
+    try {
+      folderFiles = await listFolder(folder.id);
+    } catch (e) {
+      console.warn(`Skipping ${folder.name}:`, e);
+      continue;
+    }
+
+    // Classify files
+    const audioFiles = folderFiles.filter(f => {
+      const n = f.name.toLowerCase();
+      return AUDIO_EXTENSIONS.some(ext => n.endsWith(ext)) &&
+             !IGNORE_EXTENSIONS.some(ext => n.endsWith(ext));
+    });
+    const txtFiles = folderFiles.filter(f => f.name.toLowerCase().endsWith('.txt'));
+
+    // txt lookup: base-name (no extension, lowercase) → file id
+    const txtMap = Object.fromEntries(
+      txtFiles.map(f => [f.name.replace(/\.txt$/i, '').toLowerCase(), f.id])
+    );
+
+    const color = CAT_COLORS[i % CAT_COLORS.length];
+
+    const tracks = audioFiles.map(f => {
+      const base = f.name.replace(/\.[^.]+$/, '');   // strip extension
+      return {
+        id:          f.id,
+        audioFileId: f.id,
+        txtFileId:   txtMap[base.toLowerCase()] || null,
+        name:        f.name,
+        title:       toTitle(base),
+        category:    folder.name,
+        categoryId:  folder.id,
+        categoryColor: color,
+        categoryIdx:   i,
+        duration:    null,    // populated lazily
+        transcription: null,  // populated lazily
+        error:       false,
+      };
+    });
+
+    if (tracks.length > 0) {
+      categories.push({ id: folder.id, name: folder.name, color, tracks });
+    }
+  }
+
+  S.categories = categories;
+  S.allTracks  = categories.flatMap(c => c.tracks);
+
+  // Restore session data
+  restoreSession();
+
+  // Handle deep-link params in URL
+  handleDeepLink();
+
+  // Initial filter + render
+  applyFilters();
+  screen('app');
+  renderSidebar();
+  renderContent();
+
+  // Lazily pre-fetch audio durations in the background
+  prefetchDurations();
+}
+
+/** Convert file base-name to a readable title */
+function toTitle(base) {
+  return base
+    .replace(/[_\-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/\b\w/g, c => c.toUpperCase());
+}
+
+/** Load metadata for each track to get duration — done in small batches */
+async function prefetchDurations() {
+  const BATCH = 4;
+  for (let i = 0; i < S.allTracks.length; i += BATCH) {
+    await Promise.allSettled(
+      S.allTracks.slice(i, i + BATCH).map(loadDuration)
+    );
+  }
+}
+
+function loadDuration(track) {
+  return new Promise(resolve => {
+    const a = new Audio();
+    a.preload = 'metadata';
+    a.src = mediaUrl(track.audioFileId);
+    a.onloadedmetadata = () => {
+      track.duration = isFinite(a.duration) ? a.duration : null;
+      a.src = '';
+      // Update any visible duration label
+      const lbl = el(`dur-${track.id}`);
+      if (lbl && track.duration) lbl.textContent = fmtTime(track.duration);
+      resolve();
+    };
+    a.onerror = () => { a.src = ''; resolve(); };
+    setTimeout(() => { a.src = ''; resolve(); }, 18_000);
+  });
+}
+
+/* ================================================================
+   ⑨ SESSION STORAGE  (bookmarks, recently played)
+================================================================ */
+
+function restoreSession() {
+  try { S.bookmarks = new Set(JSON.parse(sessionStorage.getItem('sl_bm') || '[]')); } catch { S.bookmarks = new Set(); }
+  try { S.recentlyPlayed = JSON.parse(sessionStorage.getItem('sl_recent') || '[]'); } catch { S.recentlyPlayed = []; }
+}
+
+function saveBookmarks()     { sessionStorage.setItem('sl_bm',     JSON.stringify([...S.bookmarks])); }
+function saveRecent()        { sessionStorage.setItem('sl_recent',  JSON.stringify(S.recentlyPlayed)); }
+
+function toggleBookmark(trackId) {
+  if (S.bookmarks.has(trackId)) S.bookmarks.delete(trackId);
+  else                           S.bookmarks.add(trackId);
+  saveBookmarks();
+  // Update bookmark button on the card in-place
+  const btn = el(`bm-${trackId}`);
+  if (btn) {
+    const starred = S.bookmarks.has(trackId);
+    btn.classList.toggle('starred', starred);
+    btn.setAttribute('title', starred ? 'Remove bookmark' : 'Bookmark');
+    btn.querySelector('.bm-ico').textContent = starred ? '★' : '☆';
+  }
+  renderSidebar(); // update count badge
+}
+
+function addToRecent(track) {
+  S.recentlyPlayed = [track.id, ...S.recentlyPlayed.filter(id => id !== track.id)].slice(0, 10);
+  saveRecent();
+  renderSidebar();
+}
+
+/* ================================================================
+   ⑩ SEARCH & FILTERING
+================================================================ */
+
+function applyFilters() {
+  let tracks = [...S.allTracks];
+
+  // Category / special view
+  if (S.currentCategory === 'bookmarks') {
+    tracks = tracks.filter(t => S.bookmarks.has(t.id));
+  } else if (S.currentCategory === 'recent') {
+    const order = new Map(S.recentlyPlayed.map((id, i) => [id, i]));
+    tracks = tracks.filter(t => order.has(t.id));
+    tracks.sort((a, b) => order.get(a.id) - order.get(b.id));
+  } else if (S.currentCategory !== 'all') {
+    tracks = tracks.filter(t => t.categoryId === S.currentCategory);
+  }
+
+  // Duration filter
+  if (S.durationFilter !== 'all') {
+    tracks = tracks.filter(t => {
+      if (t.duration == null) return true; // unknown — include
+      const m = t.duration / 60;
+      if (S.durationFilter === 'short')  return m < 10;
+      if (S.durationFilter === 'medium') return m >= 10 && m <= 30;
+      if (S.durationFilter === 'long')   return m > 30;
+    });
+  }
+
+  // Full-text search (title, category, transcription)
+  const q = S.searchQuery.toLowerCase().trim();
+  if (q) {
+    tracks = tracks.filter(t =>
+      t.title.toLowerCase().includes(q) ||
+      t.category.toLowerCase().includes(q) ||
+      (t.transcription && t.transcription.toLowerCase().includes(q))
+    );
+  }
+
+  // Sort (skip for 'recent' — already ordered)
+  if (S.currentCategory !== 'recent') {
+    switch (S.sortBy) {
+      case 'title-asc':  tracks.sort((a, b) => a.title.localeCompare(b.title)); break;
+      case 'title-desc': tracks.sort((a, b) => b.title.localeCompare(a.title)); break;
+      case 'duration':   tracks.sort((a, b) => (a.duration ?? Infinity) - (b.duration ?? Infinity)); break;
+      case 'category':   tracks.sort((a, b) => a.category.localeCompare(b.category) || a.title.localeCompare(b.title)); break;
+    }
+  }
+
+  S.filtered = tracks;
+}
+
+/* ================================================================
+   ⑪ PLAYBACK
+================================================================ */
+
+function playTrack(track, autoStart = true) {
+  S.currentTrack = track;
+
+  // Wire up the audio element
+  // Using access_token in query param — the only way for <audio> to auth with Drive
+  audioEl.src = mediaUrl(track.audioFileId);
+  audioEl.playbackRate = S.speed;
+  audioEl.volume       = S.volume;
+  audioEl.muted        = S.isMuted;
+
+  if (autoStart) {
+    audioEl.play().catch(err => {
+      console.error('Playback error:', err);
+      toast('Playback failed — file may be unavailable.');
+      S.isPlaying = false;
+      updatePlayUI();
+    });
+    S.isPlaying = true;
+  }
+
+  addToRecent(track);
+  updatePlayerBar();
+  el('player-bar').classList.add('visible');
+  updateCardHighlights();
+  updateDeepLink(track);
+
+  // Pre-fetch transcription for current + next
+  prefetchTranscription(track);
+  const nxt = getNextTrack();
+  if (nxt && nxt !== track) prefetchTranscription(nxt);
+}
+
+async function prefetchTranscription(track) {
+  if (track.transcription !== null || !track.txtFileId) return;
+  try   { track.transcription = await fetchText(track.txtFileId); }
+  catch { track.transcription = ''; }
+}
+
+function togglePlayPause() {
+  if (!S.currentTrack) return;
+  if (S.isPlaying) {
+    audioEl.pause();
+    S.isPlaying = false;
+  } else {
+    audioEl.play().catch(() => toast('Playback failed.'));
+    S.isPlaying = true;
+  }
+  updatePlayUI();
+  updateCardHighlights();
+}
+
+function playNext() {
+  const nxt = getNextTrack();
+  if (nxt) playTrack(nxt);
+}
+
+function playPrev() {
+  if (audioEl.currentTime > 3) { audioEl.currentTime = 0; return; }
+  const prv = getPrevTrack();
+  if (prv) playTrack(prv);
+}
+
+function getNextTrack() {
+  const pl = S.filtered.length ? S.filtered : S.allTracks;
+  if (!pl.length) return null;
+  if (S.isShuffle) return pl[Math.floor(Math.random() * pl.length)];
+  const i = pl.findIndex(t => t.id === S.currentTrack?.id);
+  return pl[(i + 1) % pl.length];
+}
+
+function getPrevTrack() {
+  const pl = S.filtered.length ? S.filtered : S.allTracks;
+  if (!pl.length) return null;
+  const i = pl.findIndex(t => t.id === S.currentTrack?.id);
+  return pl[(i - 1 + pl.length) % pl.length];
+}
+
+function toggleShuffle() {
+  S.isShuffle = !S.isShuffle;
+  el('btn-shuffle').classList.toggle('lit', S.isShuffle);
+}
+
+function toggleRepeat() {
+  S.isRepeat  = !S.isRepeat;
+  audioEl.loop = S.isRepeat;
+  el('btn-repeat').classList.toggle('lit', S.isRepeat);
+}
+
+function toggleMute() {
+  S.isMuted = !S.isMuted;
+  audioEl.muted = S.isMuted;
+  el('ico-vol').classList.toggle('hidden',  S.isMuted);
+  el('ico-mute').classList.toggle('hidden', !S.isMuted);
+}
+
+function setSpeed(v) {
+  S.speed = parseFloat(v);
+  audioEl.playbackRate = S.speed;
+}
+
+/* Audio event handlers */
+function onTimeUpdate() {
+  const cur = audioEl.currentTime;
+  const dur = audioEl.duration || 0;
+  el('p-cur').textContent = fmtTime(cur);
+  el('p-prog').value      = dur ? Math.round((cur / dur) * 1000) : 0;
+  // Transcription auto-scroll
+  if (S.transPanelOpen && S.transSegments.length > 1) syncTransSegment(cur);
+}
+
+function onTrackEnded() {
+  S.isPlaying = false;
+  if (!S.isRepeat) {
+    const nxt = getNextTrack();
+    if (nxt && nxt.id !== S.currentTrack?.id) { playTrack(nxt); return; }
+  }
+  updatePlayUI();
+  updateCardHighlights();
+}
+
+function onMetadata() {
+  const dur = audioEl.duration;
+  el('p-dur').textContent = fmtTime(dur);
+  el('p-prog').max = 1000;
+  if (S.currentTrack && !S.currentTrack.duration && isFinite(dur)) {
+    S.currentTrack.duration = dur;
+    const lbl = el(`dur-${S.currentTrack.id}`);
+    if (lbl) lbl.textContent = fmtTime(dur);
+  }
+}
+
+function onAudioError() {
+  S.isBuffering = false;
+  updateBufUI();
+  if (S.currentTrack) {
+    S.currentTrack.error = true;
+    toast('Could not load audio — file may be unavailable.');
+    S.isPlaying = false;
+    updatePlayUI();
+    // Mark card as error
+    const card = el(`card-${S.currentTrack.id}`);
+    if (card) card.classList.add('has-error');
+  }
+}
+
+/* ================================================================
+   ⑫ TRANSCRIPTION
+================================================================ */
+
+async function openTranscriptionForTrack(trackId) {
+  const track = S.allTracks.find(t => t.id === trackId);
+  if (!track) return;
+  await openTranscription(track);
+}
+
+async function openTranscription(track) {
+  S.transPanelOpen = true;
+  el('trans-panel').classList.add('open');
+  el('trans-title').textContent = track.title;
+  el('trans-text').textContent  = 'Loading…';
+
+  if (!track.txtFileId) {
+    el('trans-text').textContent = 'No transcription file for this track.';
+    S.transSegments = []; S.transContent = '';
+    return;
+  }
+
+  if (track.transcription === null) {
+    try   { track.transcription = await fetchText(track.txtFileId); }
+    catch { track.transcription = ''; }
+  }
+
+  if (!track.transcription) {
+    el('trans-text').textContent = 'Transcription is empty or unavailable.';
+    S.transSegments = []; S.transContent = '';
+    return;
+  }
+
+  S.transContent = track.transcription;
+  renderTranscription(track.transcription, S.searchQuery);
+}
+
+function closeTranscription() {
+  S.transPanelOpen = false;
+  el('trans-panel').classList.remove('open');
+}
+
+function toggleTranscription() {
+  if (S.transPanelOpen) closeTranscription();
+  else if (S.currentTrack) openTranscription(S.currentTrack);
+}
+
+/**
+ * Parse transcription into timed segments.
+ * Supports formats: [HH:MM:SS] or [MM:SS] at the start of lines.
+ */
+function parseTranscription(text) {
+  const RE  = /^\[(\d{1,2}):(\d{2})(?::(\d{2}))?\]\s*/;
+  const segs = [];
+  let cur   = null;
+
+  for (const line of text.split('\n')) {
+    const m = line.match(RE);
+    if (m) {
+      if (cur) segs.push(cur);
+      const hasH = m[3] !== undefined;
+      const h = hasH ? +m[1] : 0;
+      const min = hasH ? +m[2] : +m[1];
+      const sec = hasH ? +m[3] : +m[2];
+      cur = { time: h * 3600 + min * 60 + sec, text: line.replace(RE, '').trim() };
+    } else if (cur) {
+      cur.text += (cur.text ? '\n' : '') + line;
+    } else {
+      segs.push({ time: 0, text: line });
+    }
+  }
+  if (cur) segs.push(cur);
+  return segs;
+}
+
+function renderTranscription(text, query = '') {
+  S.transSegments = parseTranscription(text);
+  const container = el('trans-text');
+  container.style.fontSize = `${S.transFontSize}px`;
+
+  const hasTimes = S.transSegments.some(s => s.time > 0);
+
+  if (hasTimes && S.transSegments.length > 1) {
+    // Timed segments — clickable, auto-scrolling
+    container.innerHTML = S.transSegments.map((seg, i) => {
+      const ts  = seg.time > 0 ? `<span class="t-ts">[${fmtTime(seg.time)}]</span>` : '';
+      const txt = query ? hlText(esc(seg.text), query) : esc(seg.text);
+      return `<div class="t-seg" id="tseg-${i}" data-time="${seg.time}" onclick="seekTo(${seg.time})">${ts}${txt}</div>`;
+    }).join('');
+  } else {
+    const txt = query ? hlText(esc(text), query) : esc(text);
+    container.innerHTML = `<div style="white-space:pre-wrap">${txt}</div>`;
+  }
+}
+
+function syncTransSegment(currentTime) {
+  let idx = 0;
+  for (let i = 0; i < S.transSegments.length; i++) {
+    if (S.transSegments[i].time <= currentTime) idx = i; else break;
+  }
+  document.querySelectorAll('.t-seg.t-active').forEach(e => e.classList.remove('t-active'));
+  const active = el(`tseg-${idx}`);
+  if (active) {
+    active.classList.add('t-active');
+    const body = el('trans-body');
+    if (active.offsetTop < body.scrollTop || active.offsetTop + active.offsetHeight > body.scrollTop + body.offsetHeight) {
+      active.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }
+}
+
+function seekTo(seconds) {
+  audioEl.currentTime = seconds;
+  if (!S.isPlaying && S.currentTrack) {
+    audioEl.play().catch(() => {});
+    S.isPlaying = true;
+    updatePlayUI();
+  }
+}
+
+function changeFont(delta) {
+  S.transFontSize = Math.max(11, Math.min(24, S.transFontSize + delta));
+  el('trans-text').style.fontSize = `${S.transFontSize}px`;
+}
+
+function copyTranscription() {
+  if (!S.transContent) return;
+  navigator.clipboard.writeText(S.transContent)
+    .then(() => toast('Transcription copied!'))
+    .catch(() => toast('Copy failed — try manually.'));
+}
+
+/* ================================================================
+   ⑬ DEEP LINKS  (category + track encoded as URL search params)
+================================================================ */
+
+function updateDeepLink(track) {
+  const url = new URL(location.href);
+  url.searchParams.set('cat',   track.categoryId);
+  url.searchParams.set('track', track.id);
+  history.replaceState(null, '', url.toString());
+}
+
+function handleDeepLink() {
+  const p = new URLSearchParams(location.search);
+  const catId   = p.get('cat');
+  const trackId = p.get('track');
+  if (catId)   S.currentCategory = catId;
+  if (trackId) {
+    const t = S.allTracks.find(t => t.id === trackId);
+    if (t) {
+      // Defer so UI is ready; don't auto-play (browser policy without user gesture)
+      setTimeout(() => {
+        playTrack(t, false);
+        toast(`Deep-linked: ${t.title}`);
+      }, 600);
+    }
+  }
+}
+
+function shareTrack() {
+  const url = new URL(location.href);
+  if (S.currentTrack) {
+    url.searchParams.set('cat',   S.currentTrack.categoryId);
+    url.searchParams.set('track', S.currentTrack.id);
+  }
+  navigator.clipboard.writeText(url.toString())
+    .then(() => toast('Link copied!'))
+    .catch(() => toast('Copy failed.'));
+}
+
+/* ================================================================
+   ⑭ UI RENDERING
+================================================================ */
+
+function screen(name) {
+  const screens = { login:'scr-login', denied:'scr-denied', loading:'scr-loading', app:'app' };
+  Object.entries(screens).forEach(([k, id]) => {
+    const e = el(id);
+    if (!e) return;
+    if (k === 'app') e.classList.toggle('visible', name === 'app');
+    else             e.classList.toggle('hidden',   k !== name);
+  });
+}
+
+function setLoadLabel(msg) { el('load-lbl').textContent = msg; }
+
+/* ── Sidebar ─────────────────────────────────────────────────── */
+function renderSidebar() {
+  const bm  = S.bookmarks.size;
+  const rec = S.recentlyPlayed.length;
+
+  let h = `
+    <div class="sidebar-sec">
+      <div class="sidebar-sec-label">Browse</div>
+      ${sbBtn('all',       '🎵', 'All Teachings',    S.allTracks.length)}
+      ${sbBtn('bookmarks', '★',  'Bookmarks',         bm)}
+      ${sbBtn('recent',    '🕐', 'Recently Played',   rec)}
+    </div>`;
+
+  if (S.categories.length) {
+    h += `<div class="sidebar-sec"><div class="sidebar-sec-label">Categories</div>`;
+    h += S.categories.map(c =>
+      `<button class="sidebar-btn ${S.currentCategory === c.id ? 'active' : ''}"
+               onclick="selectCat('${c.id}')">
+         <span class="cat-dot" style="background:${c.color}" aria-hidden="true"></span>
+         <span class="side-label">${esc(c.name)}</span>
+         <span class="side-badge">${c.tracks.length}</span>
+       </button>`
+    ).join('');
+    h += `</div>`;
+  }
+
+  el('sb-scroll').innerHTML = h;
+}
+
+function sbBtn(id, icon, label, count) {
+  const a = S.currentCategory === id ? 'active' : '';
+  return `<button class="sidebar-btn ${a}" onclick="selectCat('${id}')">
+    <span aria-hidden="true">${icon}</span>
+    <span class="side-label">${label}</span>
+    <span class="side-badge">${count}</span>
+  </button>`;
+}
+
+function selectCat(id) {
+  S.currentCategory = id;
+  applyFilters();
+  renderSidebar();
+  renderContent();
+  if (window.innerWidth <= 768) toggleSidebar(false);
+}
+
+/* ── Content area ────────────────────────────────────────────── */
+function renderContent() {
+  const area = el('content-area');
+  const cnt  = S.filtered.length;
+  const q    = S.searchQuery.trim();
+
+  let catLabel = 'All Teachings';
+  if      (S.currentCategory === 'bookmarks') catLabel = 'Bookmarks';
+  else if (S.currentCategory === 'recent')    catLabel = 'Recently Played';
+  else if (S.currentCategory !== 'all') {
+    catLabel = S.categories.find(c => c.id === S.currentCategory)?.name ?? 'Category';
+  }
+
+  let html = `
+    <div class="content-top">
+      <div>
+        <h1 class="content-title">${esc(catLabel)}</h1>
+        <div class="content-count">
+          ${cnt} ${cnt === 1 ? 'track' : 'tracks'}${q ? ` matching "${esc(q)}"` : ''}
+        </div>
+      </div>
+      <div class="toolbar">
+        <select class="filter-sel" onchange="setDurFilter(this.value)" aria-label="Duration filter">
+          <option value="all"    ${S.durationFilter==='all'?'selected':''}>Any Duration</option>
+          <option value="short"  ${S.durationFilter==='short'?'selected':''}>&lt; 10 min</option>
+          <option value="medium" ${S.durationFilter==='medium'?'selected':''}>10 – 30 min</option>
+          <option value="long"   ${S.durationFilter==='long'?'selected':''}>&gt; 30 min</option>
+        </select>
+        <select class="filter-sel" onchange="setSortBy(this.value)" aria-label="Sort by">
+          <option value="title-asc"  ${S.sortBy==='title-asc'?'selected':''}>Title A–Z</option>
+          <option value="title-desc" ${S.sortBy==='title-desc'?'selected':''}>Title Z–A</option>
+          <option value="duration"   ${S.sortBy==='duration'?'selected':''}>Duration</option>
+          <option value="category"   ${S.sortBy==='category'?'selected':''}>Category</option>
+        </select>
+        ${S.currentTrack
+          ? `<button class="btn-share-track" onclick="shareTrack()">
+               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                 <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
+                 <polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/>
+               </svg>
+               Share Track
+             </button>`
+          : ''}
+      </div>
+    </div>`;
+
+  if (cnt === 0) {
+    html += `<div class="empty-state">
+      <div class="empty-ico">${q ? '🔍' : S.currentCategory === 'bookmarks' ? '★' : '🎵'}</div>
+      <div class="empty-title">${q ? 'No results found' : 'Nothing here yet'}</div>
+      <div class="empty-desc">${
+        q
+          ? `No tracks match "${esc(q)}". Try a different search or browse by category.`
+          : S.currentCategory === 'bookmarks'
+            ? 'Bookmark tracks by clicking ☆ on any audio card.'
+            : S.currentCategory === 'recent'
+              ? 'Play some tracks to see them here.'
+              : 'This category has no audio files.'
+      }</div>
+    </div>`;
+  } else {
+    html += `<div class="cards-grid" id="cards-grid">`;
+    html += S.filtered.map(renderCard).join('');
+    html += `</div>`;
+  }
+
+  area.innerHTML = html;
+}
+
+function renderCard(track) {
+  const active    = S.currentTrack?.id === track.id;
+  const playing   = active && S.isPlaying;
+  const bookmarked = S.bookmarks.has(track.id);
+  const q         = S.searchQuery.trim().toLowerCase();
+
+  const titleHtml = q ? hlText(esc(track.title), q) : esc(track.title);
+  const durTxt    = track.duration ? fmtTime(track.duration) : '—';
+
+  return `
+    <article
+      class="audio-card${active ? ' is-active' : ''}${playing ? ' is-playing' : ''}"
+      id="card-${track.id}"
+      role="listitem"
+    >
+      <div class="card-row1">
+        <span class="cat-badge" style="background:${track.categoryColor}">${esc(track.category)}</span>
+        <div class="card-actions">
+          <button
+            class="icon-btn ${bookmarked ? 'starred' : ''}"
+            id="bm-${track.id}"
+            onclick="event.stopPropagation(); toggleBookmark('${track.id}')"
+            title="${bookmarked ? 'Remove bookmark' : 'Bookmark'}"
+            aria-label="${bookmarked ? 'Remove bookmark' : 'Bookmark'}"
+            aria-pressed="${bookmarked}"
+          >
+            <span class="bm-ico">${bookmarked ? '★' : '☆'}</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="card-row2">
+        <div class="card-title">${titleHtml}</div>
+        <div class="card-meta" id="dur-${track.id}">${durTxt}</div>
+        ${track.error ? `<div class="card-err">⚠ File unavailable
+          <button onclick="retryTrack('${track.id}')" style="margin-left:6px;color:var(--primary);font-weight:700">Retry</button>
+        </div>` : ''}
+      </div>
+
+      <div class="card-row3">
+        <div class="waveform" aria-hidden="true">
+          <div class="wv-bar"></div><div class="wv-bar"></div><div class="wv-bar"></div>
+          <div class="wv-bar"></div><div class="wv-bar"></div><div class="wv-bar"></div>
+          <div class="wv-bar"></div>
+        </div>
+        <div class="card-btns">
+          ${track.txtFileId
+            ? `<button class="btn-transcript"
+                 onclick="event.stopPropagation(); openTranscriptionForTrack('${track.id}')"
+                 aria-label="View transcription for ${esc(track.title)}">
+                 📄 Transcript
+               </button>`
+            : ''}
+          <button
+            class="play-btn"
+            onclick="onCardPlay('${track.id}')"
+            aria-label="${playing ? 'Pause' : 'Play'} ${esc(track.title)}"
+          >
+            ${playing
+              ? `<svg width="16" height="16" viewBox="0 0 24 24" fill="#fff"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>`
+              : `<svg width="16" height="16" viewBox="0 0 24 24" fill="#fff"><polygon points="5 3 19 12 5 21"/></svg>`}
+          </button>
+        </div>
+      </div>
+    </article>`;
+}
+
+/* ── Card interactions ───────────────────────────────────────── */
+function onCardPlay(trackId) {
+  const track = S.allTracks.find(t => t.id === trackId);
+  if (!track) return;
+  if (S.currentTrack?.id === trackId) togglePlayPause();
+  else playTrack(track);
+}
+
+function retryTrack(trackId) {
+  const track = S.allTracks.find(t => t.id === trackId);
+  if (!track) return;
+  track.error = false;
+  playTrack(track);
+}
+
+function updateCardHighlights() {
+  document.querySelectorAll('.audio-card').forEach(card => {
+    const tid  = card.id.replace('card-', '');
+    const active  = S.currentTrack?.id === tid;
+    const playing = active && S.isPlaying;
+    card.classList.toggle('is-active',  active);
+    card.classList.toggle('is-playing', playing);
+    const svg = card.querySelector('.play-btn svg');
+    if (svg) {
+      svg.outerHTML = playing
+        ? `<svg width="16" height="16" viewBox="0 0 24 24" fill="#fff"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>`
+        : `<svg width="16" height="16" viewBox="0 0 24 24" fill="#fff"><polygon points="5 3 19 12 5 21"/></svg>`;
+    }
+  });
+}
+
+/* ── Player bar ──────────────────────────────────────────────── */
+function updatePlayerBar() {
+  const t = S.currentTrack;
+  if (!t) return;
+  el('p-title').textContent = t.title;
+  el('p-cat').textContent   = t.category;
+  const art = el('p-art');
+  art.textContent      = t.category.charAt(0).toUpperCase();
+  art.style.background = t.categoryColor;
+  updatePlayUI();
+}
+
+function updatePlayUI() {
+  el('ico-play').classList.toggle('hidden',   S.isPlaying);
+  el('ico-pause').classList.toggle('hidden', !S.isPlaying);
+}
+
+function updateBufUI() { el('p-buf').classList.toggle('hidden', !S.isBuffering); }
+
+/* ── Sidebar toggle (mobile) ─────────────────────────────────── */
+function toggleSidebar(forceOpen) {
+  const sb  = el('sidebar');
+  const ov  = el('sb-overlay');
+  const open = forceOpen !== undefined ? forceOpen : !sb.classList.contains('mob-open');
+  sb.classList.toggle('mob-open', open);
+  ov.classList.toggle('on', open);
+}
+
+/* ── Skeleton loader ─────────────────────────────────────────── */
+function showSkeletons(n = 6) {
+  el('content-area').innerHTML = `<div class="cards-grid">` +
+    Array(n).fill(`<div class="card-skel">
+      <div class="skel-line" style="width:40%;margin-bottom:14px"></div>
+      <div class="skel-line" style="width:80%"></div>
+      <div class="skel-line" style="width:60%"></div>
+      <div class="skel-line" style="width:50%;margin-top:20px"></div>
+    </div>`).join('') + `</div>`;
+}
+
+/* ================================================================
+   ⑮ EVENT HANDLERS
+================================================================ */
+
+// Seek bar
+el('p-prog').addEventListener('input', function() {
+  if (audioEl.duration) audioEl.currentTime = (this.value / 1000) * audioEl.duration;
+});
+
+// Volume
+el('vol-range').addEventListener('input', function() {
+  S.volume = parseFloat(this.value);
+  audioEl.volume = S.volume;
+  if (S.volume > 0 && S.isMuted) { S.isMuted = false; audioEl.muted = false; el('ico-vol').classList.remove('hidden'); el('ico-mute').classList.add('hidden'); }
+  if (S.volume === 0) { el('ico-vol').classList.add('hidden'); el('ico-mute').classList.remove('hidden'); }
+});
+
+// Search (debounced 280ms)
+let searchTimer;
+el('search-input').addEventListener('input', function() {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => {
+    S.searchQuery = this.value;
+    applyFilters();
+    renderContent();
+    // Re-render transcription with highlights if open
+    if (S.transPanelOpen && S.transContent) renderTranscription(S.transContent, S.searchQuery);
+  }, 280);
+});
+
+// Filters / sort (called from inline onchange)
+function setDurFilter(v) { S.durationFilter = v; applyFilters(); renderContent(); }
+function setSortBy(v)    { S.sortBy = v;          applyFilters(); renderContent(); }
+
+/* ================================================================
+   ⑯ KEYBOARD SHORTCUTS
+   Space=play/pause  ←/→=seek 10s  M=mute  F=transcription
+================================================================ */
+document.addEventListener('keydown', e => {
+  const tag = e.target.tagName;
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+
+  switch (e.key) {
+    case ' ':
+      e.preventDefault();
+      togglePlayPause();
+      break;
+    case 'ArrowLeft':
+      e.preventDefault();
+      if (audioEl.duration) audioEl.currentTime = Math.max(0, audioEl.currentTime - 10);
+      break;
+    case 'ArrowRight':
+      e.preventDefault();
+      if (audioEl.duration) audioEl.currentTime = Math.min(audioEl.duration, audioEl.currentTime + 10);
+      break;
+    case 'm': case 'M':
+      toggleMute();
+      break;
+    case 'f': case 'F':
+      toggleTranscription();
+      break;
+  }
+});
+
+/* ================================================================
+   ⑰ UTILITY FUNCTIONS
+================================================================ */
+
+function fmtTime(s) {
+  if (!s || !isFinite(s)) return '0:00';
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = Math.floor(s % 60);
+  return h ? `${h}:${pad(m)}:${pad(sec)}` : `${m}:${pad(sec)}`;
+}
+function pad(n) { return String(n).padStart(2, '0'); }
+
+function esc(str) {
+  const d = document.createElement('div');
+  d.textContent = String(str);
+  return d.innerHTML;
+}
+
+function hlText(html, query) {
+  if (!query) return html;
+  const safe = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return html.replace(new RegExp(`(${safe})`, 'gi'), '<mark class="hl">$1</mark>');
+}
+
+function el(id) { return document.getElementById(id); }
+
+let toastTimer;
+function toast(msg, ms = 3200) {
+  const t = el('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), ms);
+}
+
+function isConfigMissing() {
+  return ROOT_FOLDER_ID  === 'PASTE_YOUR_DRIVE_FOLDER_ID_HERE' ||
+         GOOGLE_CLIENT_ID === 'PASTE_YOUR_OAUTH_CLIENT_ID_HERE';
+}
+
+/* ================================================================
+   ⑱ RENDER USER INFO
+================================================================ */
+function renderUser(user) {
+  const av = el('user-avatar');
+  if (user.picture) {
+    av.innerHTML = `<img src="${esc(user.picture)}" alt="${esc(user.name)}" referrerpolicy="no-referrer">`;
+  } else {
+    av.textContent = (user.name || user.email || '?')[0].toUpperCase();
+  }
+  el('user-name').textContent = user.given_name || user.name || user.email || '';
+}
+
+/* ================================================================
+   ⑲ INITIALISATION
+================================================================ */
+async function init() {
+  // Show config warning on the login screen if constants not set
+  if (isConfigMissing()) el('config-warn').classList.remove('hidden');
+
+  // GIS popup flow never puts a token in the URL hash,
+  // so we only check sessionStorage for a still-valid cached token.
+  const token = loadStoredToken();
+
+  if (!token) {
+    // No valid cached token — show the sign-in screen.
+    // The user clicks "Sign in with Google" → initiateOAuth() → popup.
+    screen('login');
+    return;
+  }
+
+  S.token = token;
+
+  // Validate the cached token by fetching the user profile
+  try {
+    const res = await fetch(USERINFO_URL, { headers: { Authorization: `Bearer ${token}` } });
+    if (!res.ok) throw new Error('Token expired or invalid');
+    S.user = await res.json();
+    renderUser(S.user);
+  } catch {
+    // Token is stale — clear it and ask the user to sign in again
+    sessionStorage.clear();
+    screen('login');
+    return;
+  }
+
+  // Token is valid — load the Drive library
+  await loadLibrary();
+}
+
+init();
+</script>
+</body>
+</html>
