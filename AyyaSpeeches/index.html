@@ -1271,6 +1271,36 @@ const S = {
 const audioEl = new Audio();
 audioEl.preload = 'metadata';
 
+// Blob URL cache — avoids re-downloading on replay/seek
+const _audioCache = new Map();
+let   _fetchCtrl  = null;
+
+/**
+ * Fetch a Drive file as a blob and return a local blob: URL.
+ * Using fetch() + Authorization header avoids the CORS issue that
+ * occurs when <audio> tries to follow Drive's redirect to
+ * storage.googleapis.com from a non-localhost origin (e.g. GitHub Pages).
+ */
+async function resolveAudioSrc(fileId) {
+  if (_audioCache.has(fileId)) return _audioCache.get(fileId);
+
+  // Cancel any in-flight fetch for a previous track switch
+  if (_fetchCtrl) _fetchCtrl.abort();
+  _fetchCtrl = new AbortController();
+
+  const res = await fetch(`${DRIVE_API}/files/${fileId}?alt=media`, {
+    headers: { Authorization: `Bearer ${S.token}` },
+    signal:  _fetchCtrl.signal,
+  });
+
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const blob = await res.blob();
+  const url  = URL.createObjectURL(blob);
+  _audioCache.set(fileId, url);
+  _fetchCtrl = null;
+  return url;
+}
+
 audioEl.addEventListener('timeupdate',      onTimeUpdate);
 audioEl.addEventListener('ended',           onTrackEnded);
 audioEl.addEventListener('loadedmetadata',  onMetadata);
@@ -1706,36 +1736,52 @@ function applyFilters() {
    ⑪ PLAYBACK
 ================================================================ */
 
-function playTrack(track, autoStart = true) {
+async function playTrack(track, autoStart = true) {
   S.currentTrack = track;
 
-  // Wire up the audio element
-  // Using access_token in query param — the only way for <audio> to auth with Drive
-  audioEl.src = mediaUrl(track.audioFileId);
-  audioEl.playbackRate = S.speed;
-  audioEl.volume       = S.volume;
-  audioEl.muted        = S.isMuted;
-
-  if (autoStart) {
-    audioEl.play().catch(err => {
-      console.error('Playback error:', err);
-      toast('Playback failed — file may be unavailable.');
-      S.isPlaying = false;
-      updatePlayUI();
-    });
-    S.isPlaying = true;
-  }
-
-  addToRecent(track);
+  // Update UI immediately so player bar appears and card highlights
   updatePlayerBar();
   el('player-bar').classList.add('visible');
   updateCardHighlights();
   updateDeepLink(track);
+  addToRecent(track);
 
   // Pre-fetch transcription for current + next
   prefetchTranscription(track);
   const nxt = getNextTrack();
   if (nxt && nxt !== track) prefetchTranscription(nxt);
+
+  if (!autoStart) return;
+
+  // Show buffering indicator while downloading the audio blob
+  S.isBuffering = true;
+  updateBufUI();
+
+  try {
+    // Fetch audio as blob — correctly authenticates through Drive's storage redirect
+    const src = await resolveAudioSrc(track.audioFileId);
+
+    // User may have clicked a different track while this was loading
+    if (S.currentTrack?.id !== track.id) return;
+
+    audioEl.src          = src;
+    audioEl.playbackRate = S.speed;
+    audioEl.volume       = S.volume;
+    audioEl.muted        = S.isMuted;
+
+    await audioEl.play();
+    S.isPlaying = true;
+    updatePlayUI();
+    updateCardHighlights();
+  } catch (err) {
+    if (err.name === 'AbortError') return; // cancelled by a track switch
+    console.error('Playback error:', err);
+    S.isPlaying   = false;
+    S.isBuffering = false;
+    updateBufUI();
+    updatePlayUI();
+    toast('Playback failed — file may be unavailable.');
+  }
 }
 
 async function prefetchTranscription(track) {
