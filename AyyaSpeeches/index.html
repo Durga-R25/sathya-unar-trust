@@ -1394,9 +1394,12 @@ async function initiateOAuth() {
     },
   });
 
-  // Open the Google account-picker popup
-  // prompt:'select_account' forces the account chooser every time
-  _tokenClient.requestAccessToken({ prompt: 'select_account' });
+  // Open the Google account-picker popup.
+  // If we previously detected an insufficient-scope error, force a fresh consent
+  // dialog so the user can grant the Drive scope they missed last time.
+  const needsConsent = sessionStorage.getItem('sl_force_consent') === '1';
+  sessionStorage.removeItem('sl_force_consent');
+  _tokenClient.requestAccessToken({ prompt: needsConsent ? 'consent' : 'select_account' });
 }
 
 /** Load a previously stored token, returning null if missing or expired */
@@ -1517,6 +1520,19 @@ async function loadLibrary() {
     rootItems = await listFolder(ROOT_FOLDER_ID);
   } catch (err) {
     console.error('loadLibrary failed:', err);
+
+    // Insufficient scope means the user's token doesn't include drive.readonly.
+    // This happens when a prior OAuth grant didn't include the Drive scope.
+    // Fix: flag it and send them back to login so they re-consent with full scopes.
+    if (err.message.toLowerCase().includes('insufficient')) {
+      sessionStorage.setItem('sl_force_consent', '1');
+      sessionStorage.removeItem('sl_token');
+      sessionStorage.removeItem('sl_token_exp');
+      toast('Drive access not granted — please sign in again and allow Drive access.');
+      screen('login');
+      return;
+    }
+
     showDeniedReason(err.message);
     screen('denied');
     return;
